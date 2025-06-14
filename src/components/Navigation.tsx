@@ -37,7 +37,7 @@ export function Navigation() {
           variant="outline"
           size="sm"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="bg-slate-900/90 backdrop-blur-xl border-slate-700/50"
+          className="bg-slate-900/90 backdrop-blur-xl border-slate-700/50 hover:bg-slate-800/90"
         >
           {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
         </Button>
@@ -58,82 +58,87 @@ export function Navigation() {
           x: isMobileMenuOpen ? 0 : -300 
         }}
         className={`
-          fixed left-0 top-0 h-screen w-64 bg-slate-900/90 backdrop-blur-xl border-r border-slate-700/50 z-50
-          lg:translate-x-0 lg:static lg:z-auto
+          fixed left-0 top-0 h-screen w-72 sm:w-80 bg-slate-900/90 backdrop-blur-xl border-r border-slate-700/50 z-50
+          lg:translate-x-0 lg:static lg:z-auto lg:w-64 xl:w-72
           transition-transform duration-300 ease-in-out
         `}
       >
-        <div className="p-4 sm:p-6">
-          <div className="flex items-center space-x-3 mb-6 sm:mb-8">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-              <Shield className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center space-x-3 mb-6 sm:mb-8">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                <Shield className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-white">EverKeep</h1>
+                <p className="text-xs text-slate-400">Digital Vault</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-white">EverKeep</h1>
-              <p className="text-xs text-slate-400">Digital Vault</p>
+
+            <Button 
+              className="w-full mb-4 sm:mb-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-sm sm:text-base py-2 sm:py-3"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Vault
+            </Button>
+
+            {/* Navigation Items */}
+            <div className="space-y-1 sm:space-y-2">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.to;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 ${
+                      isActive 
+                        ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' 
+                        : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base">{item.label}</span>
+                  </NavLink>
+                );
+              })}
             </div>
+
+            <Separator className="my-4 sm:my-6 bg-slate-700/50" />
+
+            <Button
+              variant="ghost"
+              onClick={() => {
+                logout();
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800/50 text-sm sm:text-base py-2 sm:py-3"
+            >
+              <LogOut className="w-4 h-4 mr-3" />
+              Sign Out
+            </Button>
           </div>
 
-          <Button 
-            className="w-full mb-4 sm:mb-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-sm sm:text-base"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Vault
-          </Button>
-
-          <div className="space-y-2">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.to;
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' 
-                      : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
-                  }`}
-                >
-                  <item.icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="font-medium text-sm sm:text-base">{item.label}</span>
-                </NavLink>
-              );
-            })}
-          </div>
-
-          <Separator className="my-4 sm:my-6 bg-slate-700/50" />
-
-          <Button
-            variant="ghost"
-            onClick={() => {
-              logout();
-              setIsMobileMenuOpen(false);
-            }}
-            className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800/50 text-sm sm:text-base"
-          >
-            <LogOut className="w-4 h-4 mr-3" />
-            Sign Out
-          </Button>
-        </div>
-
-        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
-          <div className="bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-700/50">
-            <p className="text-sm text-slate-300 mb-2">Deadman Switch</p>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400">Next check-in</span>
-              <span className="text-sm font-medium text-green-400">42 days</span>
-            </div>
-            <div className="w-full bg-slate-700 rounded-full h-2 mt-2">
-              <div className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full" style={{ width: '70%' }}></div>
+          {/* Deadman Switch Status - Bottom */}
+          <div className="mt-auto p-4 sm:p-6">
+            <div className="bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-700/50">
+              <p className="text-sm text-slate-300 mb-2">Deadman Switch</p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-slate-400">Next check-in</span>
+                <span className="text-sm font-medium text-green-400">42 days</span>
+              </div>
+              <div className="w-full bg-slate-700 rounded-full h-2">
+                <div className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full" style={{ width: '70%' }}></div>
+              </div>
             </div>
           </div>
         </div>
       </motion.nav>
 
       {/* Desktop Navigation Spacer */}
-      <div className="hidden lg:block w-64 flex-shrink-0"></div>
+      <div className="hidden lg:block w-64 xl:w-72 flex-shrink-0"></div>
     </>
   );
 }
