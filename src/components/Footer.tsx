@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 
-export function Footer() {
+export const Footer = () => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const { user } = useAuth();
@@ -213,4 +213,4 @@ export function Footer() {
       </div>
     </footer>
   );
-}
+};
