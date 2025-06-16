@@ -257,7 +257,7 @@ export function PricingPage() {
                   </div>
 
                   <Button 
-                    className={`w-full h-auto py-4 text-lg ${
+                    className={`w-full h-auto py-3 text-lg ${
                       plan.popular 
                         ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' 
                         : 'bg-slate-800 hover:bg-slate-700 text-white'
@@ -385,11 +385,11 @@ export function PricingPage() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-10 py-6 h-auto">
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-10 py-4 h-auto">
                 Start Free Trial
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
-              <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800 text-lg px-10 py-6 h-auto">
+              <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800 text-lg px-10 py-4 h-auto">
                 <Headphones className="w-5 h-5 mr-2" />
                 Talk to Sales
               </Button>

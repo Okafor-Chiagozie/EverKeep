@@ -350,12 +350,12 @@ export function AboutPage() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-10 py-6 h-auto">
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-10 py-4 h-auto">
                 Start Your Vault
               </Button>
               <Button
                 variant="outline"
-                className="border-slate-600 text-slate-300 hover:bg-slate-800 text-lg px-10 py-6 h-auto"
+                className="border-slate-600 text-slate-300 hover:bg-slate-800 text-lg px-10 py-4 h-auto"
               >
                 Learn More
               </Button>

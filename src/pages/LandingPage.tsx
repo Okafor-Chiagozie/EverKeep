@@ -176,7 +176,7 @@ export function LandingPage() {
                     setIsLogin(false);
                     setShowAuthModal(true);
                   }}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-10 py-6 h-auto"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-10 py-4 h-auto"
                 >
                   Start Your Vault
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -184,7 +184,7 @@ export function LandingPage() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-slate-600 text-slate-300 hover:bg-slate-800 text-lg px-10 py-6 h-auto"
+                  className="border-slate-600 text-slate-300 hover:bg-slate-800 text-lg px-10 py-4 h-auto"
                 >
                   <Play className="w-5 h-5 mr-2" />
                   Watch Demo
@@ -497,7 +497,7 @@ export function LandingPage() {
                     setIsLogin(false);
                     setShowAuthModal(true);
                   }}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-10 py-6 h-auto"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-10 py-4 h-auto"
                 >
                   Create Your Vault
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -505,7 +505,7 @@ export function LandingPage() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-slate-600 text-slate-300 hover:bg-slate-800 text-lg px-10 py-6 h-auto"
+                  className="border-slate-600 text-slate-300 hover:bg-slate-800 text-lg px-10 py-4 h-auto"
                 >
                   <Download className="w-5 h-5 mr-2" />
                   Download App
@@ -604,7 +604,7 @@ export function LandingPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg py-6 h-auto"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg py-4 h-auto"
               >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
