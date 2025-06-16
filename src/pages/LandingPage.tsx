@@ -28,7 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function LandingPage() {
@@ -533,32 +533,33 @@ export function LandingPage() {
 
       {/* Auth Modal */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
-        <DialogContent className="max-w-md bg-slate-900/95 border-slate-700 p-0">
-          <div className="modal-content-compact">
-            <DialogHeader className="text-center mb-4">
+        <DialogContent className="max-w-md bg-slate-900/95 border-slate-700">
+          <div className="modal-content-compact relative">
+            {/* Single Close Button - positioned absolutely */}
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Modal Header */}
+            <div className="text-center mb-4">
               <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                 <Lock className="w-8 h-8 text-white" />
               </div>
-              <DialogTitle className="text-2xl font-bold text-white mb-2">
+              <h2 className="text-2xl font-bold text-white mb-2">
                 {isLogin ? 'Welcome Back' : 'Create Your Vault'}
-              </DialogTitle>
+              </h2>
               <p className="text-slate-400">
                 {isLogin 
                   ? 'Sign in to access your digital vault'
                   : 'Start preserving your legacy today'
                 }
               </p>
-            </DialogHeader>
+            </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAuthModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-
+            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
               {!isLogin && (
                 <div>
@@ -620,6 +621,7 @@ export function LandingPage() {
               </Button>
             </form>
 
+            {/* Toggle Login/Register */}
             <div className="text-center mt-5">
               <p className="text-slate-400">
                 {isLogin ? "Don't have an account?" : "Already have an account?"}
