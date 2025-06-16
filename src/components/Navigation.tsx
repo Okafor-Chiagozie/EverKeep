@@ -63,7 +63,7 @@ export function Navigation() {
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={`
           fixed left-0 top-0 h-screen w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50] shadow-2xl
-          lg:translate-x-0 lg:static lg:z-auto lg:w-64 xl:w-72 2xl:w-80 lg:shadow-none
+          lg:translate-x-0 lg:static lg:z-auto lg:w-64 xl:w-72 2xl:w-80 lg:shadow-none lg:fixed lg:h-screen
           flex flex-col navigation-sidebar
         `}
       >
@@ -133,7 +133,7 @@ export function Navigation() {
         </div>
       </motion.nav>
 
-      {/* Desktop Navigation Spacer */}
+      {/* Desktop Navigation Spacer - Fixed width to prevent layout shifts */}
       <div className="hidden lg:block w-64 xl:w-72 2xl:w-80 flex-shrink-0"></div>
     </>
   );

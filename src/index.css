@@ -271,13 +271,37 @@ body:has([data-radix-dialog-content]) {
   z-index: 10;
 }
 
-/* Navigation specific styles */
+/* Navigation specific styles - FIXED SIDEBAR */
 .navigation-sidebar {
   /* Ensure proper scrolling on mobile */
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   /* Ensure proper z-index stacking */
   z-index: 50;
+}
+
+/* Desktop fixed sidebar positioning */
+@media (min-width: 1024px) {
+  .navigation-sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    width: 16rem !important; /* 64 * 4 = 256px */
+    transform: translateX(0) !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .navigation-sidebar {
+    width: 18rem !important; /* 72 * 4 = 288px */
+  }
+}
+
+@media (min-width: 1536px) {
+  .navigation-sidebar {
+    width: 20rem !important; /* 80 * 4 = 320px */
+  }
 }
 
 /* Mobile navigation overlay */
@@ -301,27 +325,6 @@ body:has([data-radix-dialog-content]) {
   width: 100%;
   min-width: 0;
   overflow-x: hidden;
-}
-
-/* Desktop navigation spacing */
-@media (min-width: 1024px) {
-  .navigation-sidebar {
-    width: 16rem; /* 64 * 4 = 256px */
-    position: static;
-    transform: translateX(0) !important;
-  }
-}
-
-@media (min-width: 1280px) {
-  .navigation-sidebar {
-    width: 18rem; /* 72 * 4 = 288px */
-  }
-}
-
-@media (min-width: 1536px) {
-  .navigation-sidebar {
-    width: 20rem; /* 80 * 4 = 320px */
-  }
 }
 
 /* Ensure proper dashboard content layout */
