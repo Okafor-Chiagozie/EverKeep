@@ -28,8 +28,14 @@ export function Header() {
     { name: 'Contact', href: '/contact' }
   ];
 
-  // Don't show header on authenticated pages
-  if (user && user.isOnboarded) {
+  // Only hide header on authenticated dashboard pages
+  const isDashboardPage = location.pathname.startsWith('/dashboard') || 
+                          location.pathname.startsWith('/vaults') || 
+                          location.pathname.startsWith('/contacts') || 
+                          location.pathname.startsWith('/timeline') || 
+                          location.pathname.startsWith('/settings');
+
+  if (user && user.isOnboarded && isDashboardPage) {
     return null;
   }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Shield, Mail, ArrowRight, Twitter, Facebook, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,9 +10,16 @@ export const Footer = () => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const { user } = useAuth();
+  const location = useLocation();
 
-  // Don't show footer on authenticated pages
-  if (user && user.isOnboarded) {
+  // Only hide footer on authenticated dashboard pages
+  const isDashboardPage = location.pathname.startsWith('/dashboard') || 
+                          location.pathname.startsWith('/vaults') || 
+                          location.pathname.startsWith('/contacts') || 
+                          location.pathname.startsWith('/timeline') || 
+                          location.pathname.startsWith('/settings');
+
+  if (user && user.isOnboarded && isDashboardPage) {
     return null;
   }
 
