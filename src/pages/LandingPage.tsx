@@ -535,7 +535,7 @@ export function LandingPage() {
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="max-w-md bg-slate-900/95 border-slate-700">
           <div className="modal-content-compact relative">
-            {/* Single Close Button - positioned absolutely */}
+            {/* Close Button with Icon - positioned absolutely */}
             <button
               onClick={() => setShowAuthModal(false)}
               className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200"
