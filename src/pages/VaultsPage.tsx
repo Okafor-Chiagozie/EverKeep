@@ -69,7 +69,7 @@ export function VaultsPage() {
 
   return (
     <div className="w-full min-h-screen">
-      <div className="p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 lg:space-y-8">
+      <div className="px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -119,7 +119,7 @@ export function VaultDetailPage() {
         `}
       >
         {/* Vault Header */}
-        <div className="p-4 sm:p-6 border-b border-slate-700/50">
+        <div className="p-3 sm:p-4 lg:p-6 border-b border-slate-700/50">
           <Button
             variant="ghost"
             size="sm"
@@ -157,7 +157,7 @@ export function VaultDetailPage() {
         </div>
 
         {/* Folders List */}
-        <div className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <div className="flex-1 p-3 sm:p-4 space-y-2 overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium text-slate-300">Folders</h3>
             <Button size="sm" variant="ghost" className="p-1">
@@ -196,7 +196,7 @@ export function VaultDetailPage() {
         </div>
 
         {/* Recipients */}
-        <div className="p-4 border-t border-slate-700/50">
+        <div className="p-3 sm:p-4 border-t border-slate-700/50">
           <h3 className="font-medium text-slate-300 mb-3">Recipients</h3>
           <div className="space-y-2">
             {recipients.map((recipient, index) => (
@@ -254,7 +254,7 @@ export function VaultDetailPage() {
           /* Folder Content */
           <>
             {/* Folder Header */}
-            <div className="p-4 sm:p-6 border-b border-slate-700/50 bg-slate-900/30">
+            <div className="p-3 sm:p-4 lg:p-6 border-b border-slate-700/50 bg-slate-900/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3 min-w-0 flex-1">
                   {(() => {
@@ -282,7 +282,7 @@ export function VaultDetailPage() {
             </div>
 
             {/* Entries List */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+            <div className="flex-1 overflow-y-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
               <AnimatePresence>
                 {/* Compose New Entry */}
                 {isComposing && (
