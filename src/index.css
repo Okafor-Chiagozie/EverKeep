@@ -197,42 +197,7 @@ button:focus-visible {
   @apply h-10 px-3 py-2;
 }
 
-/* Modal document-level scrolling */
-.modal-document-scroll {
-  /* Remove fixed positioning and use absolute with document scroll */
-  position: absolute !important;
-  top: 2rem !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  margin: 0 auto 2rem auto !important;
-  
-  /* Ensure modal can be taller than viewport */
-  max-height: none !important;
-  height: auto !important;
-  
-  /* Add responsive margins */
-  margin-left: 1rem !important;
-  margin-right: 1rem !important;
-  width: calc(100% - 2rem) !important;
-}
-
-@media (min-width: 640px) {
-  .modal-document-scroll {
-    margin-left: 2rem !important;
-    margin-right: 2rem !important;
-    width: calc(100% - 4rem) !important;
-  }
-}
-
-@media (min-width: 768px) {
-  .modal-document-scroll {
-    margin-left: auto !important;
-    margin-right: auto !important;
-    width: auto !important;
-  }
-}
-
-/* Ensure overlay covers full document height when modal is tall */
+/* Modal document-level scrolling fixes */
 [data-radix-dialog-overlay] {
   position: fixed !important;
   top: 0 !important;
@@ -241,6 +206,33 @@ button:focus-visible {
   bottom: 0 !important;
   min-height: 100vh !important;
   min-height: 100dvh !important;
+  z-index: 50 !important;
+}
+
+[data-radix-dialog-content] {
+  position: absolute !important;
+  top: 2rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  margin: 0 1rem 2rem 1rem !important;
+  width: calc(100% - 2rem) !important;
+  max-height: none !important;
+  height: auto !important;
+  z-index: 51 !important;
+}
+
+@media (min-width: 640px) {
+  [data-radix-dialog-content] {
+    margin: 0 2rem 2rem 2rem !important;
+    width: calc(100% - 4rem) !important;
+  }
+}
+
+@media (min-width: 768px) {
+  [data-radix-dialog-content] {
+    margin: 0 auto 2rem auto !important;
+    width: auto !important;
+  }
 }
 
 /* Ensure body scroll is enabled when modal is open */
@@ -251,7 +243,6 @@ body:has([data-radix-dialog-content]) {
 
 /* Custom scrollbar for better UX */
 .modal-scrollable {
-  /* Custom scrollbar for better UX */
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
 }
