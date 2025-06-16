@@ -115,26 +115,8 @@ export function Navigation() {
         </div>
 
         {/* Footer Section */}
-        <div className="p-4 lg:p-6 border-t border-slate-700/50 space-y-4 flex-shrink-0">
-          {/* Deadman Switch Status */}
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-medium text-slate-300">Deadman Switch</p>
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-            </div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-slate-400">Next check-in</span>
-              <span className="text-sm font-medium text-green-400">42 days</span>
-            </div>
-            <div className="w-full bg-slate-700 rounded-full h-2">
-              <div 
-                className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full transition-all duration-300" 
-                style={{ width: '70%' }}
-              ></div>
-            </div>
-          </div>
-
-          <Separator className="bg-slate-700/50" />
+        <div className="p-4 lg:p-6 border-t border-slate-700/50 flex-shrink-0">
+          <Separator className="bg-slate-700/50 mb-4" />
 
           {/* Sign Out Button */}
           <Button
