@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   Shield, 
   Lock, 
@@ -22,14 +22,12 @@ import {
   Quote,
   Play,
   Download,
-  X,
-  Menu
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -40,7 +38,6 @@ export function LandingPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   const { login, register } = useAuth();
   const navigate = useNavigate();
@@ -140,117 +137,8 @@ export function LandingPage() {
     { number: '256-bit', label: 'Encryption Standard' }
   ];
 
-  const navItems = [
-    { name: 'About', href: '/about' },
-    { name: 'How It Works', href: '/how-it-works' },
-    { name: 'Pricing', href: '/pricing' },
-    { name: 'Contact', href: '/contact' }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-slate-700/50"
-      >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">EverKeep</h1>
-                <p className="text-xs text-slate-400 hidden sm:block">Digital Vault</p>
-              </div>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-8">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="text-slate-300 hover:text-white transition-colors"
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
-
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setIsLogin(true);
-                  setShowAuthModal(true);
-                }}
-                className="text-slate-300 hover:text-white hidden sm:inline-flex"
-              >
-                Sign In
-              </Button>
-              <Button
-                onClick={() => {
-                  setIsLogin(false);
-                  setShowAuthModal(true);
-                }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                Get Started
-              </Button>
-              
-              {/* Mobile Menu Button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="lg:hidden text-slate-300 hover:text-white"
-              >
-                {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </Button>
-            </div>
-          </div>
-
-          {/* Mobile Navigation */}
-          <AnimatePresence>
-            {showMobileMenu && (
-              <motion.nav
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="lg:hidden mt-4 pt-4 border-t border-slate-700/50"
-              >
-                <div className="flex flex-col space-y-4">
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      onClick={() => setShowMobileMenu(false)}
-                      className="text-slate-300 hover:text-white transition-colors"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setIsLogin(true);
-                      setShowAuthModal(true);
-                      setShowMobileMenu(false);
-                    }}
-                    className="text-slate-300 hover:text-white justify-start"
-                  >
-                    Sign In
-                  </Button>
-                </div>
-              </motion.nav>
-            )}
-          </AnimatePresence>
-        </div>
-      </motion.header>
-
+    <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-24">
@@ -643,92 +531,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 bg-slate-900/80 border-t border-slate-700/50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="md:col-span-2">
-              <Link to="/" className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">EverKeep</h3>
-                  <p className="text-sm text-slate-400">Digital Vault</p>
-                </div>
-              </Link>
-              <p className="text-slate-400 mb-4 max-w-md">
-                Secure posthumous digital vault for your most precious memories. 
-                Preserve your legacy with military-grade encryption.
-              </p>
-              <div className="flex space-x-4">
-                {['Twitter', 'Facebook', 'LinkedIn'].map((social) => (
-                  <Button key={social} variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                    {social}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-white mb-4">Product</h4>
-              <div className="space-y-2">
-                {[
-                  { name: 'Features', href: '/how-it-works' },
-                  { name: 'Security', href: '/about' },
-                  { name: 'Pricing', href: '/pricing' },
-                  { name: 'API', href: '/contact' }
-                ].map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className="block text-slate-400 hover:text-white transition-colors"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-white mb-4">Support</h4>
-              <div className="space-y-2">
-                {[
-                  { name: 'Help Center', href: '/contact' },
-                  { name: 'Contact', href: '/contact' },
-                  { name: 'Privacy', href: '/about' },
-                  { name: 'Terms', href: '/about' }
-                ].map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className="block text-slate-400 hover:text-white transition-colors"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <Separator className="my-8 bg-slate-700/50" />
-
-          <div className="flex flex-col sm:flex-row items-center justify-between">
-            <p className="text-slate-400 text-sm">
-              &copy; 2024 EverKeep. Your memories, preserved forever.
-            </p>
-            <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-              <Link to="/about" className="text-slate-400 hover:text-white text-sm transition-colors">
-                Privacy Policy
-              </Link>
-              <Link to="/about" className="text-slate-400 hover:text-white text-sm transition-colors">
-                Terms of Service
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
-
       {/* Auth Modal */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="max-w-md bg-slate-900/95 border-slate-700 p-0">
@@ -818,9 +620,7 @@ export function LandingPage() {
               </Button>
             </form>
 
-            <Separator className="my-6 bg-slate-700/50" />
-
-            <div className="text-center">
+            <div className="text-center mt-6">
               <p className="text-slate-400">
                 {isLogin ? "Don't have an account?" : "Already have an account?"}
               </p>
