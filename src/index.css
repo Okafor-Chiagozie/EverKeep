@@ -155,3 +155,44 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom input height adjustments - exclude footer inputs */
+.input-enhanced {
+  @apply h-12 px-4 py-3;
+}
+
+/* Responsive input heights */
+@media (min-width: 640px) {
+  .input-enhanced {
+    @apply h-14 px-4 py-4;
+  }
+}
+
+/* Textarea enhanced height */
+.textarea-enhanced {
+  @apply px-4 py-3;
+  min-height: 120px;
+}
+
+@media (min-width: 640px) {
+  .textarea-enhanced {
+    @apply px-4 py-4;
+    min-height: 140px;
+  }
+}
+
+/* Modal content padding adjustments */
+.modal-content-compact {
+  @apply p-6;
+}
+
+@media (min-width: 640px) {
+  .modal-content-compact {
+    @apply p-8;
+  }
+}
+
+/* Footer inputs remain unchanged */
+.footer input {
+  @apply h-10 px-3 py-2;
+}

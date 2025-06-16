@@ -171,9 +171,9 @@ export function Header() {
       {/* Auth Modal */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="max-w-md bg-slate-900/95 border-slate-700 p-0">
-          <div className="p-8">
-            <DialogHeader className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+          <div className="modal-content-compact">
+            <DialogHeader className="text-center mb-4">
+              <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                 <Lock className="w-8 h-8 text-white" />
               </div>
               <DialogTitle className="text-2xl font-bold text-white mb-2">
@@ -196,7 +196,7 @@ export function Header() {
               <X className="w-4 h-4" />
             </Button>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {!isLogin && (
                 <div>
                   <Label htmlFor="name" className="text-slate-300">Full Name</Label>
@@ -254,7 +254,7 @@ export function Header() {
               </Button>
             </form>
 
-            <div className="text-center mt-6">
+            <div className="text-center mt-5">
               <p className="text-slate-400">
                 {isLogin ? "Don't have an account?" : "Already have an account?"}
               </p>

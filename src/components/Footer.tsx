@@ -125,7 +125,7 @@ export const Footer = () => {
               <h4 className="font-semibold text-white mb-6">Stay Connected</h4>
               
               {/* Newsletter Signup */}
-              <div className="mb-8">
+              <div className="mb-8 footer">
                 <p className="text-slate-400 text-sm mb-4">
                   Get updates on new features and security insights.
                 </p>
@@ -144,7 +144,7 @@ export const Footer = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="bg-slate-800/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500"
+                      className="h-10 px-3 py-2 bg-slate-800/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500"
                     />
                     <Button
                       type="submit"
