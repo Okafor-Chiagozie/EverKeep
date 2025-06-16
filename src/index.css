@@ -196,3 +196,38 @@ button:focus-visible {
 .footer input {
   @apply h-10 px-3 py-2;
 }
+
+/* Modal scrolling improvements */
+.modal-scrollable {
+  /* Ensure modal content can scroll properly */
+  max-height: calc(90vh - 2rem);
+  overflow-y: auto;
+  
+  /* Custom scrollbar for better UX */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+.modal-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-scrollable::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.3);
+  border-radius: 3px;
+}
+
+.modal-scrollable::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.5);
+}
+
+/* Ensure close button stays accessible during scroll */
+.modal-close-button {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
