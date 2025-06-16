@@ -276,14 +276,11 @@ body:has([data-radix-dialog-content]) {
   /* Ensure proper scrolling on mobile */
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  /* Ensure proper z-index stacking */
+  z-index: 50;
 }
 
-/* Prevent layout shift on navigation toggle */
-.main-content {
-  transition: margin-left 0.3s ease-in-out;
-}
-
-/* Ensure proper z-index stacking */
+/* Mobile navigation overlay */
 .navigation-overlay {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -298,10 +295,20 @@ body:has([data-radix-dialog-content]) {
   transform: translateX(4px);
 }
 
-/* Responsive navigation widths */
+/* Ensure proper content spacing and prevent layout shifts */
+.main-content {
+  transition: margin-left 0.3s ease-in-out;
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* Desktop navigation spacing */
 @media (min-width: 1024px) {
   .navigation-sidebar {
     width: 16rem; /* 64 * 4 = 256px */
+    position: static;
+    transform: translateX(0) !important;
   }
 }
 
@@ -317,26 +324,54 @@ body:has([data-radix-dialog-content]) {
   }
 }
 
-/* Ensure proper content spacing */
+/* Ensure proper dashboard content layout */
 .dashboard-content {
   min-height: 100vh;
-  padding-left: 0;
+  width: 100%;
+  overflow-x: hidden;
 }
 
-@media (min-width: 1024px) {
-  .dashboard-content {
-    padding-left: 16rem;
+/* Fix any potential z-index conflicts */
+.fixed {
+  z-index: 40;
+}
+
+.fixed[class*="z-["] {
+  /* Preserve explicit z-index values */
+}
+
+/* Ensure mobile menu button is always visible */
+@media (max-width: 1023px) {
+  .navigation-mobile-button {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 60;
   }
 }
 
-@media (min-width: 1280px) {
-  .dashboard-content {
-    padding-left: 18rem;
+/* Prevent horizontal scroll on mobile */
+@media (max-width: 1023px) {
+  body {
+    overflow-x: hidden;
+  }
+  
+  .main-content {
+    width: 100vw;
+    max-width: 100vw;
   }
 }
 
-@media (min-width: 1536px) {
-  .dashboard-content {
-    padding-left: 20rem;
+/* Ensure proper backdrop blur support */
+@supports (backdrop-filter: blur(12px)) {
+  .navigation-sidebar {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+@supports not (backdrop-filter: blur(12px)) {
+  .navigation-sidebar {
+    background-color: rgba(15, 23, 42, 0.98);
   }
 }
