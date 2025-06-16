@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   Shield, 
   Lock, 
@@ -22,7 +22,8 @@ import {
   Quote,
   Play,
   Download,
-  X
+  X,
+  Menu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -39,6 +40,7 @@ export function LandingPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   const { login, register } = useAuth();
   const navigate = useNavigate();
@@ -138,6 +140,13 @@ export function LandingPage() {
     { number: '256-bit', label: 'Encryption Standard' }
   ];
 
+  const navItems = [
+    { name: 'About', href: '/about' },
+    { name: 'How It Works', href: '/how-it-works' },
+    { name: 'Pricing', href: '/pricing' },
+    { name: 'Contact', href: '/contact' }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
@@ -148,7 +157,7 @@ export function LandingPage() {
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <Link to="/" className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                 <Shield className="w-6 h-6 text-white" />
               </div>
@@ -156,7 +165,20 @@ export function LandingPage() {
                 <h1 className="text-xl font-bold text-white">EverKeep</h1>
                 <p className="text-xs text-slate-400 hidden sm:block">Digital Vault</p>
               </div>
-            </div>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center space-x-8">
+              {navItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="text-slate-300 hover:text-white transition-colors"
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
 
             <div className="flex items-center space-x-4">
               <Button
@@ -178,8 +200,54 @@ export function LandingPage() {
               >
                 Get Started
               </Button>
+              
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className="lg:hidden text-slate-300 hover:text-white"
+              >
+                {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </Button>
             </div>
           </div>
+
+          {/* Mobile Navigation */}
+          <AnimatePresence>
+            {showMobileMenu && (
+              <motion.nav
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="lg:hidden mt-4 pt-4 border-t border-slate-700/50"
+              >
+                <div className="flex flex-col space-y-4">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      onClick={() => setShowMobileMenu(false)}
+                      className="text-slate-300 hover:text-white transition-colors"
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setIsLogin(true);
+                      setShowAuthModal(true);
+                      setShowMobileMenu(false);
+                    }}
+                    className="text-slate-300 hover:text-white justify-start"
+                  >
+                    Sign In
+                  </Button>
+                </div>
+              </motion.nav>
+            )}
+          </AnimatePresence>
         </div>
       </motion.header>
 
@@ -580,7 +648,7 @@ export function LandingPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
-              <div className="flex items-center space-x-3 mb-4">
+              <Link to="/" className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                   <Shield className="w-6 h-6 text-white" />
                 </div>
@@ -588,7 +656,7 @@ export function LandingPage() {
                   <h3 className="text-xl font-bold text-white">EverKeep</h3>
                   <p className="text-sm text-slate-400">Digital Vault</p>
                 </div>
-              </div>
+              </Link>
               <p className="text-slate-400 mb-4 max-w-md">
                 Secure posthumous digital vault for your most precious memories. 
                 Preserve your legacy with military-grade encryption.
@@ -605,10 +673,19 @@ export function LandingPage() {
             <div>
               <h4 className="font-semibold text-white mb-4">Product</h4>
               <div className="space-y-2">
-                {['Features', 'Security', 'Pricing', 'API'].map((item) => (
-                  <Button key={item} variant="ghost" size="sm" className="text-slate-400 hover:text-white p-0 h-auto justify-start">
-                    {item}
-                  </Button>
+                {[
+                  { name: 'Features', href: '/how-it-works' },
+                  { name: 'Security', href: '/about' },
+                  { name: 'Pricing', href: '/pricing' },
+                  { name: 'API', href: '/contact' }
+                ].map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="block text-slate-400 hover:text-white transition-colors"
+                  >
+                    {item.name}
+                  </Link>
                 ))}
               </div>
             </div>
@@ -616,10 +693,19 @@ export function LandingPage() {
             <div>
               <h4 className="font-semibold text-white mb-4">Support</h4>
               <div className="space-y-2">
-                {['Help Center', 'Contact', 'Privacy', 'Terms'].map((item) => (
-                  <Button key={item} variant="ghost" size="sm" className="text-slate-400 hover:text-white p-0 h-auto justify-start">
-                    {item}
-                  </Button>
+                {[
+                  { name: 'Help Center', href: '/contact' },
+                  { name: 'Contact', href: '/contact' },
+                  { name: 'Privacy', href: '/about' },
+                  { name: 'Terms', href: '/about' }
+                ].map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="block text-slate-400 hover:text-white transition-colors"
+                  >
+                    {item.name}
+                  </Link>
                 ))}
               </div>
             </div>
@@ -632,12 +718,12 @@ export function LandingPage() {
               &copy; 2024 EverKeep. Your memories, preserved forever.
             </p>
             <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-              <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
+              <Link to="/about" className="text-slate-400 hover:text-white text-sm transition-colors">
                 Privacy Policy
-              </Button>
-              <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
+              </Link>
+              <Link to="/about" className="text-slate-400 hover:text-white text-sm transition-colors">
                 Terms of Service
-              </Button>
+              </Link>
             </div>
           </div>
         </div>

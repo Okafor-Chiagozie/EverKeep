@@ -9,6 +9,10 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 // Pages
 import { LandingPage } from '@/pages/LandingPage';
+import { AboutPage } from '@/pages/AboutPage';
+import { HowItWorksPage } from '@/pages/HowItWorksPage';
+import { PricingPage } from '@/pages/PricingPage';
+import { ContactPage } from '@/pages/ContactPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { Dashboard } from '@/pages/Dashboard';
 import { VaultsPage } from '@/pages/VaultsPage';
@@ -29,6 +33,10 @@ function App() {
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
               <Routes>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/how-it-works" element={<HowItWorksPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/contact" element={<ContactPage />} />
                 <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route path="/vault/:id/recipient" element={<RecipientView />} />
                 
