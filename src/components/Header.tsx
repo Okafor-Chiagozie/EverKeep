@@ -66,7 +66,7 @@ export function Header() {
                 setIsLogin(true);
                 setShowAuthModal(true);
               }}
-              className="text-slate-300 hover:text-white hidden sm:inline-flex"
+              className="text-slate-300 hover:text-white hidden sm:inline-flex px-6 py-3 h-auto"
             >
               Sign In
             </Button>
@@ -75,7 +75,7 @@ export function Header() {
                 setIsLogin(false);
                 setShowAuthModal(true);
               }}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-6 py-3 h-auto"
             >
               Get Started
             </Button>
@@ -123,7 +123,7 @@ export function Header() {
                     setShowAuthModal(true);
                     setShowMobileMenu(false);
                   }}
-                  className="text-slate-300 hover:text-white justify-start"
+                  className="text-slate-300 hover:text-white justify-start px-6 py-3 h-auto"
                 >
                   Sign In
                 </Button>
