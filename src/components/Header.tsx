@@ -5,7 +5,7 @@ import { Shield, Menu, X, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function Header() {
@@ -171,6 +171,9 @@ export function Header() {
       {/* Auth Modal */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="max-w-md bg-slate-900/95 border-slate-700">
+          <DialogTitle className="sr-only">
+            {isLogin ? 'Sign In to EverKeep' : 'Create EverKeep Account'}
+          </DialogTitle>
           <div className="modal-content-compact relative">
             {/* Single Close Button - positioned absolutely */}
             <button
