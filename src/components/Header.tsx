@@ -176,12 +176,13 @@ export function Header() {
           </DialogTitle>
           
           <div className="modal-content-compact relative">
-            {/* Close Button - positioned absolutely */}
+            {/* Close Button with proper icon */}
             <button
               onClick={() => setShowAuthModal(false)}
-              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200"
+              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200 group"
+              aria-label="Close modal"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 group-hover:scale-110 transition-transform" />
             </button>
 
             {/* Modal Header */}

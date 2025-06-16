@@ -28,7 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function LandingPage() {
@@ -533,18 +533,23 @@ export function LandingPage() {
 
       {/* Auth Modal */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
-        <DialogContent className="max-w-md bg-slate-900/95 border-slate-700">
+        <DialogContent className="max-w-md bg-slate-900/95 border-slate-700 mx-4 sm:mx-0">
+          <DialogTitle className="sr-only">
+            {isLogin ? 'Sign In to EverKeep' : 'Create EverKeep Account'}
+          </DialogTitle>
+          
           <div className="modal-content-compact relative">
-            {/* Single Close Button - positioned absolutely */}
+            {/* Close Button with proper icon */}
             <button
               onClick={() => setShowAuthModal(false)}
-              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200"
+              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200 group"
+              aria-label="Close modal"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 group-hover:scale-110 transition-transform" />
             </button>
 
             {/* Modal Header */}
-            <div className="text-center mb-4">
+            <div className="text-center mb-4 pr-12">
               <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                 <Lock className="w-8 h-8 text-white" />
               </div>
@@ -613,10 +618,7 @@ export function LandingPage() {
                     <span>{isLogin ? 'Signing In...' : 'Creating Account...'}</span>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-2">
-                    <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </div>
+                  <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
                 )}
               </Button>
             </form>
