@@ -270,3 +270,73 @@ body:has([data-radix-dialog-content]) {
   top: 0;
   z-index: 10;
 }
+
+/* Navigation specific styles */
+.navigation-sidebar {
+  /* Ensure proper scrolling on mobile */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent layout shift on navigation toggle */
+.main-content {
+  transition: margin-left 0.3s ease-in-out;
+}
+
+/* Ensure proper z-index stacking */
+.navigation-overlay {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Smooth transitions for navigation items */
+.nav-item {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-item:hover {
+  transform: translateX(4px);
+}
+
+/* Responsive navigation widths */
+@media (min-width: 1024px) {
+  .navigation-sidebar {
+    width: 16rem; /* 64 * 4 = 256px */
+  }
+}
+
+@media (min-width: 1280px) {
+  .navigation-sidebar {
+    width: 18rem; /* 72 * 4 = 288px */
+  }
+}
+
+@media (min-width: 1536px) {
+  .navigation-sidebar {
+    width: 20rem; /* 80 * 4 = 320px */
+  }
+}
+
+/* Ensure proper content spacing */
+.dashboard-content {
+  min-height: 100vh;
+  padding-left: 0;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-content {
+    padding-left: 16rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard-content {
+    padding-left: 18rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .dashboard-content {
+    padding-left: 20rem;
+  }
+}

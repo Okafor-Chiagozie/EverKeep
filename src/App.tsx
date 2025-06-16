@@ -48,7 +48,7 @@ function App() {
                   <ProtectedRoute>
                     <div className="flex min-h-screen">
                       <Navigation />
-                      <main className="flex-1 w-full lg:w-auto">
+                      <main className="flex-1 min-w-0 overflow-hidden">
                         <Dashboard />
                       </main>
                     </div>
@@ -59,7 +59,7 @@ function App() {
                   <ProtectedRoute>
                     <div className="flex min-h-screen">
                       <Navigation />
-                      <main className="flex-1 w-full lg:w-auto">
+                      <main className="flex-1 min-w-0 overflow-hidden">
                         <VaultsPage />
                       </main>
                     </div>
@@ -70,7 +70,7 @@ function App() {
                   <ProtectedRoute>
                     <div className="flex min-h-screen">
                       <Navigation />
-                      <main className="flex-1 w-full lg:w-auto">
+                      <main className="flex-1 min-w-0 overflow-hidden">
                         <VaultDetailPage />
                       </main>
                     </div>
@@ -81,7 +81,7 @@ function App() {
                   <ProtectedRoute>
                     <div className="flex min-h-screen">
                       <Navigation />
-                      <main className="flex-1 w-full lg:w-auto">
+                      <main className="flex-1 min-w-0 overflow-hidden">
                         <ContactsPage />
                       </main>
                     </div>
@@ -92,7 +92,7 @@ function App() {
                   <ProtectedRoute>
                     <div className="flex min-h-screen">
                       <Navigation />
-                      <main className="flex-1 w-full lg:w-auto">
+                      <main className="flex-1 min-w-0 overflow-hidden">
                         <TimelinePage />
                       </main>
                     </div>
@@ -103,7 +103,7 @@ function App() {
                   <ProtectedRoute>
                     <div className="flex min-h-screen">
                       <Navigation />
-                      <main className="flex-1 w-full lg:w-auto">
+                      <main className="flex-1 min-w-0 overflow-hidden">
                         <SettingsPage />
                       </main>
                     </div>
