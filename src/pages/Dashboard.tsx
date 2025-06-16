@@ -29,8 +29,6 @@ export function Dashboard() {
     acc + vault.folders.reduce((folderAcc, folder) => folderAcc + folder.entries.length, 0), 0
   );
 
-  const daysUntilCheck = user?.deadmanTrigger || 60;
-
   const recentActivity = [
     { type: 'vault', action: 'Created vault "Family Photos"', time: '2 hours ago', icon: Shield },
     { type: 'entry', action: 'Added message to "Letters for Sarah"', time: '1 day ago', icon: FileText },
@@ -87,58 +85,6 @@ export function Dashboard() {
           </p>
         </motion.div>
 
-        {/* Deadman Status Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="p-4 sm:p-6 bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-500/30">
-            <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white">Deadman Switch Status</h3>
-                  <p className="text-xs sm:text-sm text-slate-400">Next check-in required</p>
-                </div>
-              </div>
-              <div className="text-center sm:text-right">
-                <p className="text-2xl sm:text-3xl font-bold text-green-400">{daysUntilCheck}</p>
-                <p className="text-xs sm:text-sm text-slate-400">days remaining</p>
-              </div>
-            </div>
-            
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-xs sm:text-sm">
-                <span className="text-slate-400">Time until delivery</span>
-                <span className="text-green-400">70% remaining</span>
-              </div>
-              <Progress 
-                value={70} 
-                className="h-2 sm:h-3 bg-slate-800"
-              />
-            </div>
-            
-            <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between sm:space-x-4">
-              <Button 
-                variant="outline" 
-                className="w-full sm:w-auto border-blue-500/50 text-blue-400 hover:bg-blue-500/10 text-sm"
-              >
-                <AlertCircle className="w-4 h-4 mr-2" />
-                Check In Now
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="w-full sm:w-auto text-slate-400 hover:text-white text-sm"
-              >
-                Extend Deadline
-              </Button>
-            </div>
-          </Card>
-        </motion.div>
-
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {[
@@ -175,7 +121,7 @@ export function Dashboard() {
               key={stat.title}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + index * 0.1 }}
+              transition={{ delay: 0.1 + index * 0.1 }}
             >
               <Card className="p-3 sm:p-4 lg:p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50 hover:border-slate-600/50 transition-colors">
                 <div className="flex items-center justify-between mb-2 sm:mb-3 lg:mb-4">
