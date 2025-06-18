@@ -6,11 +6,12 @@ import {
   Key, 
   Clock, 
   Users, 
-  Vault, 
   CheckCircle,
   ArrowRight,
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  AlertCircle,
+  Vault
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -18,6 +19,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
+import { getSupabaseClient } from '@/lib/supabase/supabaseClient';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
 
 interface OnboardingStep {
   id: number;
@@ -35,27 +39,27 @@ const steps: OnboardingStep[] = [
   },
   {
     id: 2,
+    title: 'Create Your First Vault',
+    description: 'Give your vault a meaningful name',
+    icon: Vault
+  },
+  {
+    id: 3,
     title: 'Generate Encryption Keys',
     description: 'Create unbreakable encryption for your vault',
     icon: Key
   },
   {
-    id: 3,
+    id: 4,
     title: 'Setup Deadman Switch',
     description: 'Configure when to deliver your vault',
     icon: Clock
   },
   {
-    id: 4,
+    id: 5,
     title: 'Add Your First Contact',
     description: 'Choose who will receive your memories',
     icon: Users
-  },
-  {
-    id: 5,
-    title: 'Create Your First Vault',
-    description: 'Start preserving your legacy',
-    icon: Vault
   }
 ];
 
@@ -66,12 +70,15 @@ export function OnboardingPage() {
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [vaultName, setVaultName] = useState('');
+  const [vaultDescription, setVaultDescription] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
-  const { updateUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const supabase = getSupabaseClient();
 
   const handleNext = async () => {
-    if (currentStep === 2) {
+    if (currentStep === 3) {
       // Generate encryption keys
       setIsGeneratingKeys(true);
       await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate key generation
@@ -79,13 +86,97 @@ export function OnboardingPage() {
     }
     
     if (currentStep === steps.length) {
-      // Complete onboarding
-      updateUser({ 
-        isOnboarded: true, 
-        deadmanTrigger: parseInt(deadmanDays),
-        encryptionKey: 'generated-key-hash'
-      });
-      navigate('/dashboard');
+      setIsLoading(true);
+      try {
+        // Refresh user data to ensure we have the latest auth state
+        
+        
+        if (!user?.id) {
+          throw new Error('Please sign in to continue with onboarding');
+        }
+
+        // Create initial vault with all settings
+        const { data: vault, error: vaultError } = await supabase
+          .from('vaults')
+          .insert({
+            user_id: user.id,
+            name: vaultName,
+            description: vaultDescription,
+            encryption_key: 'generated-key-hash',
+            deadman_trigger: parseInt(deadmanDays),
+            status: 'active'
+          })
+          .select()
+          .single();
+
+        if (vaultError) {
+          console.error('Vault creation error:', vaultError);
+          throw new Error('Failed to create vault. Please try again.');
+        }
+
+        if (!vault) {
+          throw new Error('Failed to create vault. Please try again.');
+        }
+
+        // Create deadman settings for the vault
+        const { error: deadmanError } = await supabase
+          .from('vault_deadman_settings')
+          .insert({
+            vault_id: vault.id,
+            check_in_frequency: parseInt(deadmanDays),
+            next_check_in: new Date(Date.now() + parseInt(deadmanDays) * 24 * 60 * 60 * 1000).toISOString(),
+            is_active: true,
+            auto_deliver: true
+          });
+
+        if (deadmanError) {
+          console.error('Deadman settings error:', deadmanError);
+          throw new Error('Failed to set up deadman switch. Please try again.');
+        }
+
+        // Add the contact
+        const { data: contact, error: contactError } = await supabase
+          .from('contacts')
+          .insert({
+            user_id: user.id,
+            name: contactName,
+            email: contactEmail,
+            role: 'next-of-kin',
+            verified: false
+          })
+          .select()
+          .single();
+
+        if (contactError) {
+          console.error('Contact creation error:', contactError);
+          throw new Error('Failed to add contact. Please try again.');
+        }
+
+        if (!contact) {
+          throw new Error('Failed to add contact. Please try again.');
+        }
+
+        // Create vault recipient relationship
+        const { error: recipientError } = await supabase
+          .from('vault_recipients')
+          .insert({
+            vault_id: vault.id,
+            contact_id: contact.id
+          });
+
+        if (recipientError) {
+          console.error('Vault recipient error:', recipientError);
+          throw new Error('Failed to set up vault recipient. Please try again.');
+        }
+
+        toast.success('Onboarding completed successfully!');
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Error completing onboarding:', error);
+        toast.error(error instanceof Error ? error.message : 'An error occurred during onboarding');
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
     
@@ -93,17 +184,55 @@ export function OnboardingPage() {
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
-    }
+    setCurrentStep(prev => prev - 1);
   };
 
   const progress = (currentStep / steps.length) * 100;
-  const currentStepData = steps.find(step => step.id === currentStep)!;
+  const currentStepData = steps[currentStep - 1];
+
+  // If user is not authenticated, show a message and redirect
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+        <Card className="p-8 bg-slate-900/80 backdrop-blur-xl border-slate-700/50 max-w-md w-full">
+          <div className="text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-4">Authentication Required</h2>
+            <p className="text-slate-300 mb-6">
+              Please sign in to continue with the onboarding process.
+            </p>
+            <Button
+              onClick={() => navigate('/')}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            >
+              Return to Home
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
+        {/* Email Verification Alert */}
+        {!user.isVerified && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <Alert variant="destructive" className="bg-red-900/20 border-red-500/30">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-red-300">
+                Please verify your email address to ensure you don't lose access to your vault.
+                Check your inbox for the verification link.
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
+
         {/* Progress Bar */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -187,6 +316,37 @@ export function OnboardingPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
+                    className="space-y-6"
+                  >
+                    <div>
+                      <Label htmlFor="vault-name" className="text-slate-300">Vault Name</Label>
+                      <Input
+                        id="vault-name"
+                        value={vaultName}
+                        onChange={(e) => setVaultName(e.target.value)}
+                        className="mt-2 bg-slate-800/50 border-slate-600 text-white"
+                        placeholder="e.g., Family Memories, Letters to Sarah, Life Stories"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="vault-description" className="text-slate-300">Description</Label>
+                      <Input
+                        id="vault-description"
+                        value={vaultDescription}
+                        onChange={(e) => setVaultDescription(e.target.value)}
+                        className="mt-2 bg-slate-800/50 border-slate-600 text-white"
+                        placeholder="Describe what this vault contains"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {currentStep === 3 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
                     className="text-center"
                   >
                     {isGeneratingKeys ? (
@@ -236,7 +396,7 @@ export function OnboardingPage() {
                   </motion.div>
                 )}
 
-                {currentStep === 3 && (
+                {currentStep === 4 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -282,7 +442,7 @@ export function OnboardingPage() {
                   </motion.div>
                 )}
 
-                {currentStep === 4 && (
+                {currentStep === 5 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -332,64 +492,14 @@ export function OnboardingPage() {
                     </div>
                   </motion.div>
                 )}
-
-                {currentStep === 5 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="space-y-6"
-                  >
-                    <div className="text-center mb-6">
-                      <h3 className="text-xl font-semibold text-white mb-2">
-                        Create Your First Vault
-                      </h3>
-                      <p className="text-slate-400">
-                        Give your vault a meaningful name to get started.
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="vault-name" className="text-slate-300">Vault Name</Label>
-                      <Input
-                        id="vault-name"
-                        value={vaultName}
-                        onChange={(e) => setVaultName(e.target.value)}
-                        className="mt-2 bg-slate-800/50 border-slate-600 text-white"
-                        placeholder="e.g., Family Memories, Letters to Sarah, Life Stories"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center mx-auto mb-2">
-                          <Shield className="w-4 h-4 text-blue-400" />
-                        </div>
-                        <p className="text-sm text-slate-300">Encrypted</p>
-                      </div>
-                      <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
-                        <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center mx-auto mb-2">
-                          <Users className="w-4 h-4 text-green-400" />
-                        </div>
-                        <p className="text-sm text-slate-300">Private</p>
-                      </div>
-                      <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
-                        <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center mx-auto mb-2">
-                          <Clock className="w-4 h-4 text-purple-400" />
-                        </div>
-                        <p className="text-sm text-slate-300">Timed</p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
               </div>
 
               {/* Navigation */}
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-700/50">
+              <div className="flex justify-between mt-8">
                 <Button
                   variant="outline"
                   onClick={handleBack}
-                  disabled={currentStep === 1}
+                  disabled={currentStep === 1 || isLoading}
                   className="border-slate-600 text-slate-300 hover:bg-slate-800"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
@@ -398,15 +508,21 @@ export function OnboardingPage() {
 
                 <Button
                   onClick={handleNext}
-                  disabled={isGeneratingKeys || 
-                    (currentStep === 3 && !deadmanDays) ||
-                    (currentStep === 4 && (!contactName || !contactEmail)) ||
-                    (currentStep === 5 && !vaultName)
+                  disabled={isLoading || isGeneratingKeys || 
+                    (currentStep === 2 && (!vaultName || !vaultDescription)) ||
+                    (currentStep === 4 && !deadmanDays) ||
+                    (currentStep === 5 && (!contactName || !contactEmail))
                   }
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                 >
-                  {currentStep === steps.length ? 'Complete Setup' : 'Continue'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  {isLoading ? (
+                    'Processing...'
+                  ) : currentStep === steps.length ? (
+                    'Complete Setup'
+                  ) : (
+                    'Continue'
+                  )}
+                  {!isLoading && <ArrowRight className="w-4 h-4 ml-2" />}
                 </Button>
               </div>
             </Card>

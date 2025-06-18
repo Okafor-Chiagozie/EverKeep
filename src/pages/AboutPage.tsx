@@ -11,7 +11,9 @@ import {
   Lock,
   CheckCircle,
   Star,
-  Quote
+  Quote,
+  Rocket,
+  Smartphone
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -72,26 +74,30 @@ export function AboutPage() {
     }
   ];
 
-  const milestones = [
-    {
-      year: '2022',
-      title: 'Company Founded',
-      description: 'EverKeep was born from a personal need to preserve family memories securely.'
-    },
-    {
-      year: '2023',
-      title: 'Beta Launch',
-      description: 'Launched private beta with 1,000 families testing our platform.'
-    },
+  const timeline = [
     {
       year: '2024',
-      title: 'Public Release',
-      description: 'Officially launched to the public with enterprise-grade security.'
+      title: 'Launch',
+      description: 'EverKeep launches with secure vault creation and deadman switch functionality.',
+      icon: Rocket
     },
     {
-      year: '2024',
-      title: '50K+ Families',
-      description: 'Reached milestone of protecting memories for over 50,000 families worldwide.'
+      year: '2024-Q2',
+      title: 'Enhanced Security',
+      description: 'Advanced encryption and multi-factor authentication added.',
+      icon: Shield
+    },
+    {
+      year: '2024-Q3',
+      title: 'Contact Management',
+      description: 'Improved contact management and verification system.',
+      icon: Users
+    },
+    {
+      year: '2024-Q4',
+      title: 'Mobile Access',
+      description: 'Mobile app launch for on-the-go vault management.',
+      icon: Smartphone
     }
   ];
 
@@ -251,45 +257,23 @@ export function AboutPage() {
       </section>
 
       {/* Timeline Section */}
-      <section className="py-12 lg:py-20 bg-slate-900/30">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">Our Journey</h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-              From a personal need to a platform trusted by thousands of families
-            </p>
-          </motion.div>
-
-          <div className="relative max-w-4xl mx-auto">
-            {/* Timeline Line */}
-            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500"></div>
-
-            <div className="space-y-12">
-              {milestones.map((milestone, index) => (
-                <motion.div
-                  key={milestone.year}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.2 }}
-                  viewport={{ once: true }}
-                  className="relative flex items-start space-x-8"
-                >
-                  <div className="relative z-10 w-16 h-16 rounded-full bg-slate-900 border-4 border-blue-500 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-bold text-blue-400">{milestone.year}</span>
-                  </div>
-                  
-                  <Card className="flex-1 p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50">
-                    <h3 className="text-xl font-semibold text-white mb-2">{milestone.title}</h3>
-                    <p className="text-slate-400">{milestone.description}</p>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-white mb-12 text-center">Our Journey</h2>
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            {timeline.map((item) => (
+              <div
+                key={item.year}
+                className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-6 border border-slate-700/50"
+              >
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mb-4">
+                  <item.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">{item.title}</h3>
+                <p className="text-slate-400">{item.description}</p>
+                <span className="text-sm text-slate-500 mt-4 block">{item.year}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>

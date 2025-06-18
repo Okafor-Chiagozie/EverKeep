@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Shield, Menu, X, Lock } from 'lucide-react';
+import { Shield, Menu, X, UserPlus, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export function Header() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -19,7 +20,7 @@ export function Header() {
   
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, login, register } = useAuth();
+  const { user, login, signup, logout } = useAuth();
 
   const navItems = [
     { name: 'About', href: '/about' },
@@ -35,32 +36,31 @@ export function Header() {
                           location.pathname.startsWith('/timeline') || 
                           location.pathname.startsWith('/settings');
 
-  if (user && user.isOnboarded && isDashboardPage) {
+  if (user && user.isVerified && isDashboardPage) {
     return null;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      if (isLogin) {
-        await login(email, password);
-        navigate('/dashboard');
-      } else {
-        await register(email, password, name);
-        navigate('/onboarding');
-      }
-      setShowAuthModal(false);
-      // Reset form
-      setEmail('');
-      setPassword('');
-      setName('');
-    } catch (error) {
-      console.error('Auth error:', error);
-    } finally {
-      setIsLoading(false);
+    if (isLogin) {
+      await login(email, password);
+    } else {
+      await signup(email, password, name);
     }
+    setShowAuthModal(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setName('');
+    setIsLogin(true);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
   };
 
   return (
@@ -100,25 +100,46 @@ export function Header() {
             </nav>
 
             <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setIsLogin(true);
-                  setShowAuthModal(true);
-                }}
-                className="text-slate-300 hover:text-white hidden sm:inline-flex px-6 py-2 h-auto"
-              >
-                Sign In
-              </Button>
-              <Button
-                onClick={() => {
-                  setIsLogin(false);
-                  setShowAuthModal(true);
-                }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-6 py-2 h-auto"
-              >
-                Get Started
-              </Button>
+              {user ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate('/dashboard')}
+                    className="text-slate-300 hover:text-white"
+                  >
+                    Dashboard
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleLogout}
+                    className="text-slate-300 hover:text-white"
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setIsLogin(true);
+                      setShowAuthModal(true);
+                    }}
+                    className="text-slate-300 hover:text-white hidden sm:inline-flex px-6 py-2 h-auto"
+                  >
+                    Sign In
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setIsLogin(false);
+                      setShowAuthModal(true);
+                    }}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-6 py-2 h-auto"
+                  >
+                    Get Started
+                  </Button>
+                </>
+              )}
               
               {/* Mobile Menu Button */}
               <Button
@@ -177,38 +198,29 @@ export function Header() {
       {/* Auth Modal */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="max-w-md bg-slate-900/95 border-slate-700 mx-4 sm:mx-0">
-          <DialogTitle className="sr-only">
-            {isLogin ? 'Sign In to EverKeep' : 'Create EverKeep Account'}
-          </DialogTitle>
+          <DialogHeader>
+            <DialogTitle>{isLogin ? 'Welcome Back' : 'Create Account'}</DialogTitle>
+            <DialogDescription>
+              {isLogin 
+                ? 'Sign in to access your secure vaults'
+                : 'Create an account to start securing your digital legacy'}
+            </DialogDescription>
+          </DialogHeader>
           
           <div className="modal-content-compact relative">
             {/* Close Button with proper icon */}
             <button
-              onClick={() => setShowAuthModal(false)}
-              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200 group"
-              aria-label="Close modal"
+              onClick={() => {
+                setShowAuthModal(false);
+                resetForm();
+              }}
+              className="absolute right-0 top-0 p-2 text-slate-400 hover:text-white transition-colors"
             >
               <X className="w-4 h-4 group-hover:scale-110 transition-transform" />
             </button>
 
-            {/* Modal Header */}
-            <div className="text-center mb-4 pr-12">
-              <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                <Lock className="w-8 h-8 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-2">
-                {isLogin ? 'Welcome Back' : 'Create Your Vault'}
-              </h2>
-              <p className="text-slate-400">
-                {isLogin 
-                  ? 'Sign in to access your digital vault'
-                  : 'Start preserving your legacy today'
-                }
-              </p>
-            </div>
-
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div>
                   <Label htmlFor="name" className="text-slate-300">Full Name</Label>
@@ -218,22 +230,22 @@ export function Header() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="mt-2 bg-slate-800/50 border-slate-600 text-white placeholder:text-slate-400"
-                    placeholder="Enter your full name"
+                    className="mt-2 bg-slate-800/50 border-slate-600 text-white"
+                    placeholder="John Doe"
                   />
                 </div>
               )}
 
               <div>
-                <Label htmlFor="email" className="text-slate-300">Email Address</Label>
+                <Label htmlFor="email" className="text-slate-300">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="mt-2 bg-slate-800/50 border-slate-600 text-white placeholder:text-slate-400"
-                  placeholder="Enter your email"
+                  className="mt-2 bg-slate-800/50 border-slate-600 text-white"
+                  placeholder="you@example.com"
                 />
               </div>
 
@@ -245,39 +257,46 @@ export function Header() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="mt-2 bg-slate-800/50 border-slate-600 text-white placeholder:text-slate-400"
-                  placeholder="Enter your password"
+                  className="mt-2 bg-slate-800/50 border-slate-600 text-white"
+                  placeholder="••••••••"
                 />
               </div>
 
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg py-4 h-auto"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
                 {isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>{isLogin ? 'Signing In...' : 'Creating Account...'}</span>
-                  </div>
+                  'Processing...'
+                ) : isLogin ? (
+                  <>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign In
+                  </>
                 ) : (
-                  <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Create Account
+                  </>
                 )}
               </Button>
             </form>
 
             {/* Toggle Login/Register */}
-            <div className="text-center mt-5">
-              <p className="text-slate-400">
-                {isLogin ? "Don't have an account?" : "Already have an account?"}
-              </p>
-              <Button
-                variant="link"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-blue-400 hover:text-blue-300 p-0 h-auto font-medium"
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  resetForm();
+                }}
+                className="text-sm text-slate-400 hover:text-white transition-colors"
               >
-                {isLogin ? 'Create one here' : 'Sign in instead'}
-              </Button>
+                {isLogin
+                  ? "Don't have an account? Sign up"
+                  : 'Already have an account? Sign in'}
+              </button>
             </div>
           </div>
         </DialogContent>

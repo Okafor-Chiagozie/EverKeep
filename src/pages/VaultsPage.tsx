@@ -232,7 +232,7 @@ export function VaultsPage() {
                             return (
                               <div key={type} className="flex items-center space-x-1 text-xs text-slate-400">
                                 <IconComponent className="w-3 h-3" />
-                                <span>{count}</span>
+                                <span>{count as number}</span>
                               </div>
                             );
                           })}

@@ -3,11 +3,10 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { VaultProvider } from '@/contexts/VaultContext';
-import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
-import { Navigation } from '@/components/Navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 
 // Pages
 import { LandingPage } from '@/pages/LandingPage';
@@ -22,16 +21,17 @@ import { VaultDetailPage } from '@/pages/VaultDetailPage';
 import { ContactsPage } from '@/pages/ContactsPage';
 import { TimelinePage } from '@/pages/TimelinePage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { Navigation } from '@/components/Navigation';
 import { RecipientView } from '@/pages/RecipientView';
 
 import './App.css';
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark">
       <AuthProvider>
         <VaultProvider>
-          <Router>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
               <Header />
               

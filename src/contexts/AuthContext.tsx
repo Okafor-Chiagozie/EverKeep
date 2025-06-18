@@ -1,101 +1,65 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getSupabaseClient } from '@/lib/supabase/supabaseClient';
+import { AuthService } from '@/lib/supabase/authService';
 
-interface User {
+interface AuthUser {
   id: string;
   email: string;
   name: string;
-  isOnboarded: boolean;
-  encryptionKey?: string;
-  deadmanTrigger?: number;
+  isVerified: boolean;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
-  updateUser: (updates: Partial<User>) => void;
-  isLoading: boolean;
+  signup: (email: string, password: string, name: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const authService = new AuthService(getSupabaseClient());
 
   useEffect(() => {
-    // Check for existing session
-    const savedUser = localStorage.getItem('everkeep_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setIsLoading(false);
+    const { data: { subscription } } = authService.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const userMetadata = session.user.user_metadata;
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          name: userMetadata?.full_name || session.user.email!.split('@')[0],
+          isVerified: userMetadata?.email_verified || false
+        });
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      // Mock login - in real app, this would call your auth API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const userData: User = {
-        id: '1',
-        email,
-        name: email.split('@')[0],
-        isOnboarded: true,
-        deadmanTrigger: 60
-      };
-      
-      setUser(userData);
-      localStorage.setItem('everkeep_user', JSON.stringify(userData));
-    } finally {
-      setIsLoading(false);
-    }
+    const { error } = await authService.signIn({ email, password });
+    if (error) throw error;
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    setIsLoading(true);
-    try {
-      // Mock registration
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const userData: User = {
-        id: Math.random().toString(36),
-        email,
-        name,
-        isOnboarded: false
-      };
-      
-      setUser(userData);
-      localStorage.setItem('everkeep_user', JSON.stringify(userData));
-    } finally {
-      setIsLoading(false);
-    }
+  const signup = async (email: string, password: string, name: string) => {
+    const { error } = await authService.signUp({ email, password, name });
+    if (error) throw error;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const { error } = await authService.signOut();
+    if (error) throw error;
     setUser(null);
-    localStorage.removeItem('everkeep_user');
-  };
-
-  const updateUser = (updates: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem('everkeep_user', JSON.stringify(updatedUser));
-    }
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      login,
-      register,
-      logout,
-      updateUser,
-      isLoading
-    }}>
+    <AuthContext.Provider value={{ user, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

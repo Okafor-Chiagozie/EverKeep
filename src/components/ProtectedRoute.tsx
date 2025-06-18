@@ -17,7 +17,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/" replace />;
   }
 
-  if (!user.isOnboarded) {
+  // Only check verification for routes other than onboarding
+  if (!user.isVerified && window.location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
 
