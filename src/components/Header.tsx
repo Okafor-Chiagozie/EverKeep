@@ -163,7 +163,7 @@ export function Header() {
                       setShowAuthModal(true);
                       setShowMobileMenu(false);
                     }}
-                    className="text-slate-300 hover:text-white justify-start px-6 py-2 h-auto"
+                    className="text-slate-300 border-[1px] border-gray-600 hover:text-white justify-center px-6 py-2 h-auto"
                   >
                     Sign In
                   </Button>
