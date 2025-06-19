@@ -103,7 +103,7 @@ export function VaultsPage() {
           className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:space-x-4"
         >
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
               placeholder="Search vaults..."
               value={searchQuery}

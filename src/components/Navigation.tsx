@@ -14,7 +14,6 @@ import {
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 
 const navItems = [
   { to: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -62,8 +61,8 @@ export function Navigation() {
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={`
-          fixed left-0 top-0 h-screen w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50] shadow-2xl
-          lg:translate-x-0 lg:static lg:z-auto lg:w-64 xl:w-72 2xl:w-80 lg:shadow-none lg:fixed lg:h-screen
+          fixed left-0 top-0 h-[100dvh] w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50] shadow-2xl
+          lg:translate-x-0 lg:z-auto lg:w-64 xl:w-72 2xl:w-80 lg:shadow-none lg:fixed lg:h-screen
           flex flex-col navigation-sidebar
         `}
       >
@@ -115,8 +114,7 @@ export function Navigation() {
         </div>
 
         {/* Footer Section */}
-        <div className="p-4 lg:p-6 border-t border-slate-700/50 flex-shrink-0">
-          <Separator className="bg-slate-700/50 mb-4" />
+        <div className="p-4 pb-8 lg:p-6 border-t border-slate-700/50 flex-shrink-0">
 
           {/* Sign Out Button */}
           <Button
@@ -125,7 +123,7 @@ export function Navigation() {
               logout();
               setIsMobileMenuOpen(false);
             }}
-            className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800/50 py-3 h-auto"
+            className="w-full justify-start border-[1px] border-gray-700 text-slate-300 hover:text-white hover:bg-slate-800/50 py-3 h-auto"
           >
             <LogOut className="w-4 h-4 mr-3" />
             Sign Out
