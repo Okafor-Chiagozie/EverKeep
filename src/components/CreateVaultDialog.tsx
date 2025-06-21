@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Shield, 
   Plus, 
@@ -9,7 +10,8 @@ import {
   ArrowLeft,
   CheckCircle,
   Search,
-  User
+  User,
+  UserPlus
 } from 'lucide-react';
 import {
   Dialog,
@@ -34,7 +36,7 @@ interface CreateVaultDialogProps {
 
 const vaultSteps = [
   { id: 1, title: 'Vault Details', description: 'Name and describe your vault' },
-  { id: 2, title: 'Select Contacts', description: 'Choose who can access this vault' },
+  { id: 2, title: 'Select Contacts', description: 'Choose who can access this vault (optional)' },
   { id: 3, title: 'Success', description: 'Your vault has been created' }
 ];
 
@@ -49,6 +51,7 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   
   const { addVault, contacts } = useVaults();
+  const navigate = useNavigate();
 
   // Filter contacts based on search
   const filteredContacts = contacts.filter(contact =>
@@ -66,6 +69,17 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
     }
+  };
+
+  const handleSkipContacts = () => {
+    // Skip to vault creation with no contacts
+    handleCreateVault();
+  };
+
+  const handleAddContacts = () => {
+    // Close modal and navigate to contacts page
+    handleClose();
+    navigate('/contacts');
   };
 
   const handleCreateVault = async () => {
@@ -127,7 +141,7 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
   const canProceed = () => {
     switch (currentStep) {
       case 1: return vaultName.trim() && vaultDescription.trim();
-      case 2: return selectedContacts.length > 0;
+      case 2: return true; // Always allow proceeding from step 2 (contacts are optional)
       default: return false;
     }
   };
@@ -236,12 +250,24 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
                       <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                       <h4 className="text-lg font-medium text-white mb-2">No Contacts Yet</h4>
                       <p className="text-slate-400 mb-6">
-                        You need to add trusted contacts before creating a vault.
+                        You can create your vault now and add trusted contacts later, or add contacts first.
                       </p>
-                      <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Contact
-                      </Button>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <Button 
+                          onClick={handleAddContacts}
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        >
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Add Contacts First
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={handleSkipContacts}
+                          className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                        >
+                          Create Vault Without Contacts
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -267,6 +293,13 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
                           </Badge>
                         </div>
                       )}
+
+                      {/* Optional Notice */}
+                      <div className="p-3 rounded-lg bg-amber-900/20 border border-amber-500/30">
+                        <p className="text-amber-300 text-sm">
+                          💡 You can skip this step and add contacts to your vault later from the vault settings.
+                        </p>
+                      </div>
 
                       {/* Contacts List */}
                       <div className="max-h-64 overflow-y-auto space-y-2">
@@ -309,6 +342,18 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
                           <p className="text-slate-400">No contacts found matching "{searchQuery}"</p>
                         </div>
                       )}
+
+                      {/* Add More Contacts Option */}
+                      <div className="pt-4 border-t border-slate-700/50">
+                        <Button
+                          variant="outline"
+                          onClick={handleAddContacts}
+                          className="w-full border-slate-600 text-slate-300 hover:bg-slate-800"
+                        >
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Add More Contacts
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </motion.div>
@@ -335,9 +380,15 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
                   <p className="text-slate-400 mb-2">
                     <strong className="text-white">"{vaultName}"</strong> has been created and secured.
                   </p>
-                  <p className="text-slate-400 mb-8">
-                    {selectedContacts.length} trusted contact{selectedContacts.length !== 1 ? 's' : ''} can now access this vault.
-                  </p>
+                  {selectedContacts.length > 0 ? (
+                    <p className="text-slate-400 mb-8">
+                      {selectedContacts.length} trusted contact{selectedContacts.length !== 1 ? 's' : ''} can now access this vault.
+                    </p>
+                  ) : (
+                    <p className="text-slate-400 mb-8">
+                      You can add trusted contacts to this vault anytime from the vault settings.
+                    </p>
+                  )}
 
                   <div className="space-y-3">
                     <Button
@@ -382,23 +433,33 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
                 </Button>
                 
                 {currentStep === 2 ? (
-                  <Button
-                    onClick={handleCreateVault}
-                    disabled={!canProceed() || isCreating}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  >
-                    {isCreating ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Creating Vault...</span>
-                      </div>
-                    ) : (
-                      <>
-                        Create Vault
-                        <Shield className="w-4 h-4 ml-2" />
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={handleSkipContacts}
+                      disabled={isCreating}
+                      className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                    >
+                      Skip for Now
+                    </Button>
+                    <Button
+                      onClick={handleCreateVault}
+                      disabled={isCreating}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      {isCreating ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Creating...</span>
+                        </div>
+                      ) : (
+                        <>
+                          Create Vault
+                          <Shield className="w-4 h-4 ml-2" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 ) : (
                   <Button
                     onClick={handleNext}
