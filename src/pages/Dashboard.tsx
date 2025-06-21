@@ -101,30 +101,13 @@ export function Dashboard() {
           transition={{ delay: 0.1 }}
         >
           <Card className="p-4 sm:p-6 bg-gradient-to-r from-green-900/20 to-blue-900/20 border-green-500/30">
-            <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white">Account Activity Status</h3>
-                  <p className="text-xs sm:text-sm text-slate-400">Stay active to keep your account secure</p>
-                </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
               </div>
-              
-              <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
-                <Button 
-                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-sm"
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Check In Now
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full sm:w-auto text-slate-400 hover:text-white text-sm"
-                >
-                  View Security Settings
-                </Button>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white">Account Active & Secure</h3>
+                <p className="text-xs sm:text-sm text-slate-400">Last activity: Today • Account security verified</p>
               </div>
             </div>
           </Card>
