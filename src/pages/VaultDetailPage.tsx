@@ -57,7 +57,7 @@ export function VaultDetailPage() {
 
   if (!vault) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center p-4">
+      <div className="w-full min-h-[100dvh] flex items-center justify-center p-4">
         <div className="text-center">
           <h1 className="text-xl sm:text-2xl font-bold text-white mb-4">Vault Not Found</h1>
           <Button onClick={() => navigate('/vaults')}>
@@ -127,7 +127,7 @@ export function VaultDetailPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="w-full h-[100dvh] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Mobile Menu Button - Fixed positioning */}
       <div className="lg:hidden fixed top-4 right-4 z-[60]">
         <Button
@@ -153,7 +153,7 @@ export function VaultDetailPage() {
         )}
       </AnimatePresence>
 
-      <div className="flex h-screen w-full overflow-hidden">
+      <div className="flex h-[100dvh] w-full overflow-hidden">
         {/* Vault Info Sidebar */}
         <motion.div
           initial={false}
@@ -162,7 +162,7 @@ export function VaultDetailPage() {
           }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className={`
-            fixed left-0 top-0 h-screen w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50] shadow-2xl
+            fixed left-0 top-0 h-[100dvh] w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50] shadow-2xl
             lg:translate-x-0 lg:static lg:z-auto lg:w-80 xl:w-96
             flex flex-col
           `}
@@ -252,7 +252,7 @@ export function VaultDetailPage() {
         </motion.div>
 
         {/* Main Content Area - Takes remaining space */}
-        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden">
           {/* Chat Header */}
           <div className="p-3 sm:p-4 border-b border-slate-700/50 bg-slate-800/30 flex-shrink-0">
             <div className="flex items-center justify-between">
