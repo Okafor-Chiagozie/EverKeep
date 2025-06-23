@@ -33,13 +33,12 @@ export function VaultDetailPage() {
   const navigate = useNavigate();
   const { vaults, contacts, addVaultEntry } = useVaults();
   const [newMessage, setNewMessage] = useState('');
-  const [isComposing, setIsComposing] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const vault = vaults.find(v => v.id === id);
 
-  // Auto-resize textarea
+  // Auto-resize textarea with proper min/max height constraints
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -47,17 +46,24 @@ export function VaultDetailPage() {
       textarea.style.height = 'auto';
       
       // Calculate new height with min/max constraints
-      const minHeight = 44; // Minimum height (roughly 1 line)
-      const maxHeight = 200; // Maximum height before scrolling
+      const minHeight = 40; // Minimum height (single line)
+      const maxHeight = 150; // Maximum height before scrolling
       const newHeight = Math.min(Math.max(textarea.scrollHeight, minHeight), maxHeight);
       
       textarea.style.height = `${newHeight}px`;
+      
+      // Show scrollbar only when content exceeds max height
+      if (textarea.scrollHeight > maxHeight) {
+        textarea.style.overflowY = 'auto';
+      } else {
+        textarea.style.overflowY = 'hidden';
+      }
     }
   }, [newMessage]);
 
   if (!vault) {
     return (
-      <div className="w-full min-h-[100dvh] flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <div className="text-center">
           <h1 className="text-xl sm:text-2xl font-bold text-white mb-4">Vault Not Found</h1>
           <Button onClick={() => navigate('/vaults')}>
@@ -98,7 +104,6 @@ export function VaultDetailPage() {
     });
 
     setNewMessage('');
-    setIsComposing(false);
   };
 
   const formatTime = (timestamp: Date) => {
@@ -127,7 +132,7 @@ export function VaultDetailPage() {
   };
 
   return (
-    <div className="w-full h-[100dvh] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Mobile Menu Button - Fixed positioning */}
       <div className="lg:hidden fixed top-4 right-4 z-[60]">
         <Button
@@ -153,7 +158,7 @@ export function VaultDetailPage() {
         )}
       </AnimatePresence>
 
-      <div className="flex h-[100dvh] w-full overflow-hidden">
+      <div className="flex min-h-screen w-full">
         {/* Vault Info Sidebar */}
         <motion.div
           initial={false}
@@ -162,7 +167,7 @@ export function VaultDetailPage() {
           }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className={`
-            fixed left-0 top-0 h-[100dvh] w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50] shadow-2xl
+            fixed left-0 top-0 h-screen w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50] shadow-2xl
             lg:translate-x-0 lg:static lg:z-auto lg:w-80 xl:w-96
             flex flex-col
           `}
@@ -252,7 +257,7 @@ export function VaultDetailPage() {
         </motion.div>
 
         {/* Main Content Area - Takes remaining space */}
-        <div className="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 min-h-screen">
           {/* Chat Header */}
           <div className="p-3 sm:p-4 border-b border-slate-700/50 bg-slate-800/30 flex-shrink-0">
             <div className="flex items-center justify-between">
@@ -298,13 +303,6 @@ export function VaultDetailPage() {
                     <MessageSquare className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-4" />
                     <h3 className="text-base sm:text-lg font-semibold text-white mb-2">No messages yet</h3>
                     <p className="text-sm sm:text-base text-slate-400 mb-6 px-4">Start preserving your thoughts and memories</p>
-                    <Button
-                      onClick={() => setIsComposing(true)}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Write First Message
-                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
@@ -332,76 +330,60 @@ export function VaultDetailPage() {
                 )}
               </div>
 
-              {/* Message Input */}
+              {/* Message Input - Single line with auto-expand */}
               <div className="p-3 sm:p-4 border-t border-slate-700/50 bg-slate-800/20 flex-shrink-0">
-                {isComposing ? (
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <textarea
-                        ref={textareaRef}
-                        placeholder="Write your message, memory, or note here..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg px-3 py-3 text-white placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 custom-scrollbar auto-expand"
-                        style={{
-                          minHeight: '44px',
-                          maxHeight: '200px',
-                          height: '44px'
-                        }}
-                      />
-                    </div>
-                    <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white p-2">
-                          <Paperclip className="w-4 h-4" />
-                        </Button>
-                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-                          <Lock className="w-3 h-3 mr-1" />
-                          Encrypted
-                        </Badge>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            setIsComposing(false);
-                            setNewMessage('');
-                          }}
-                          className="text-slate-400 hover:text-white"
-                          size="sm"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={handleSendMessage}
-                          disabled={!newMessage.trim()}
-                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                          size="sm"
-                        >
-                          <Send className="w-4 h-4 mr-2" />
-                          Send
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-3">
-                    <Button
-                      onClick={() => setIsComposing(true)}
-                      className="flex-1 justify-start bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 border border-slate-600 h-11"
+                <div className="flex items-end space-x-3 max-w-full">
+                  {/* Input Field */}
+                  <div className="flex-1 relative">
+                    <textarea
+                      ref={textareaRef}
+                      placeholder="Write your message, memory, or note here..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      className="w-full bg-slate-800/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 custom-scrollbar"
+                      style={{
+                        minHeight: '40px',
+                        maxHeight: '150px',
+                        height: '40px',
+                        overflowY: 'hidden'
+                      }}
+                      rows={1}
+                    />
+                    
+                    {/* Attachment Button */}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white p-1 h-auto"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Write a message...
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-slate-600 text-slate-300 hover:bg-slate-800 h-11 w-11 p-0"
-                    >
-                      <Mic className="w-4 h-4" />
+                      <Paperclip className="w-4 h-4" />
                     </Button>
                   </div>
-                )}
+
+                  {/* Send Button */}
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!newMessage.trim()}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-[40px] w-[40px] p-0 flex-shrink-0"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* Encryption Badge */}
+                <div className="flex items-center justify-between mt-2">
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                    <Lock className="w-3 h-3 mr-1" />
+                    Encrypted
+                  </Badge>
+                  <span className="text-xs text-slate-400">Press Enter to send, Shift+Enter for new line</span>
+                </div>
               </div>
             </TabsContent>
 
