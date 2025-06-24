@@ -9,7 +9,7 @@ export interface VaultFolder {
 
 export interface VaultEntry {
   id: string;
-  type: 'text' | 'file' | 'audio' | 'video';
+  type: 'text' | 'file' | 'audio' | 'video' | 'image';
   title: string;
   content: string;
   encrypted: boolean;
@@ -64,7 +64,22 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     const savedContacts = localStorage.getItem('everkeep_contacts');
     
     if (savedVaults) {
-      setVaults(JSON.parse(savedVaults));
+      const parsedVaults = JSON.parse(savedVaults);
+      // Convert date strings back to Date objects
+      const vaultsWithDates = parsedVaults.map((vault: any) => ({
+        ...vault,
+        createdAt: new Date(vault.createdAt),
+        lastModified: new Date(vault.lastModified),
+        deliveryDate: vault.deliveryDate ? new Date(vault.deliveryDate) : undefined,
+        folders: vault.folders.map((folder: any) => ({
+          ...folder,
+          entries: folder.entries.map((entry: any) => ({
+            ...entry,
+            timestamp: new Date(entry.timestamp)
+          }))
+        }))
+      }));
+      setVaults(vaultsWithDates);
     } else {
       // Sample data
       const sampleVaults: Vault[] = [
@@ -105,7 +120,13 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     }
     
     if (savedContacts) {
-      setContacts(JSON.parse(savedContacts));
+      const parsedContacts = JSON.parse(savedContacts);
+      // Convert date strings back to Date objects
+      const contactsWithDates = parsedContacts.map((contact: any) => ({
+        ...contact,
+        addedAt: new Date(contact.addedAt)
+      }));
+      setContacts(contactsWithDates);
     } else {
       // Sample contacts
       const sampleContacts: Contact[] = [
@@ -156,6 +177,16 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
         ? { ...vault, ...updates, lastModified: new Date() }
         : vault
     ));
+    
+    // Update vault counts for contacts
+    if (updates.recipients) {
+      setContacts(prevContacts => 
+        prevContacts.map(contact => ({
+          ...contact,
+          vaultCount: vaults.filter(v => v.recipients.includes(contact.id)).length
+        }))
+      );
+    }
   };
 
   const deleteVault = (id: string) => {
@@ -179,6 +210,12 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
 
   const deleteContact = (id: string) => {
     setContacts(prev => prev.filter(contact => contact.id !== id));
+    // Remove contact from all vaults
+    setVaults(prev => prev.map(vault => ({
+      ...vault,
+      recipients: vault.recipients.filter(recipientId => recipientId !== id),
+      lastModified: new Date()
+    })));
   };
 
   const addVaultEntry = (vaultId: string, folderId: string, entryData: Omit<VaultEntry, 'id' | 'timestamp'>) => {

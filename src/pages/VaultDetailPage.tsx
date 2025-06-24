@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useParams } from 'react-router-dom';
 import { 
   Shield, 
   ArrowLeft, 
@@ -16,8 +17,17 @@ import {
   Play,
   Download,
   Lock,
-  Trash2
+  Trash2,
+  UserPlus,
+  CheckCircle
 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { useVaults } from '@/contexts/VaultContext';
+import { VaultContactsDialog } from '@/components/VaultContactsDialog';
 
 // TypeScript interfaces
 interface VaultEntry {
@@ -30,134 +40,32 @@ interface VaultEntry {
   folderName?: string;
 }
 
-interface VaultFolder {
-  id: string;
-  name: string;
-  entries: VaultEntry[];
-}
-
-interface Vault {
-  id: string;
-  name: string;
-  description: string;
-  lastModified: Date;
-  recipients: string[];
-  folders: VaultFolder[];
-}
-
-interface Contact {
-  id: string;
-  name: string;
-  email: string;
-}
-
-// Simple UI Components with proper TypeScript types
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-const Card: React.FC<CardProps> = ({ children, className = "" }) => (
-  <div className={`rounded-lg border ${className}`}>{children}</div>
-);
-
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  children: React.ReactNode;
-  className?: string;
-  variant?: "default" | "ghost" | "outline";
-  size?: "default" | "sm" | "lg";
-}
-
-const Button: React.FC<ButtonProps> = ({ 
-  children, 
-  className = "", 
-  variant = "default", 
-  size = "default", 
-  disabled = false, 
-  onClick, 
-  ...props 
-}) => {
-  const baseClasses = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50";
-  const variants = {
-    default: "bg-primary text-primary-foreground hover:bg-primary/90",
-    ghost: "hover:bg-accent hover:text-accent-foreground",
-    outline: "border border-input hover:bg-accent hover:text-accent-foreground"
-  };
-  const sizes = {
-    default: "h-10 px-4 py-2",
-    sm: "h-9 rounded-md px-3",
-    lg: "h-11 rounded-md px-8"
-  };
-  
-  return (
-    <button 
-      className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
-      disabled={disabled}
-      onClick={onClick}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-};
-
-interface BadgeProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-const Badge: React.FC<BadgeProps> = ({ children, className = "" }) => (
-  <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${className}`}>
-    {children}
-  </div>
-);
-
-interface AvatarProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-const Avatar: React.FC<AvatarProps> = ({ children, className = "" }) => (
-  <div className={`relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ${className}`}>
-    {children}
-  </div>
-);
-
-interface AvatarFallbackProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-const AvatarFallback: React.FC<AvatarFallbackProps> = ({ children, className = "" }) => (
-  <div className={`flex h-full w-full items-center justify-center rounded-full bg-muted ${className}`}>
-    {children}
-  </div>
-);
-
-// Mock data for demonstration
-const mockContacts: Contact[] = [
-  { id: '1', name: 'Sarah Johnson', email: 'sarah@example.com' },
-  { id: '2', name: 'Mike Chen', email: 'mike@example.com' }
-];
-
 export function VaultDetailPage() {
+  const { id } = useParams<{ id: string }>();
   const [newMessage, setNewMessage] = useState<string>('');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-  const [contacts] = useState<Contact[]>(mockContacts);
+  const [showContactsDialog, setShowContactsDialog] = useState<boolean>(false);
   const [textareaHeight, setTextareaHeight] = useState<number>(40);
   const [entries, setEntries] = useState<(VaultEntry & { folderName: string })[]>([]);
   const [activeTab, setActiveTab] = useState<'messages' | 'media'>('messages');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const vault: Vault = {
-    id: '1',
-    name: 'Family Memories',
-    description: 'A collection of our most precious family moments and memories',
-    lastModified: new Date(),
-    recipients: ['1', '2'],
-    folders: []
-  };
+  const { vaults, contacts, addVaultEntry } = useVaults();
+  
+  const vault = vaults.find(v => v.id === id);
+  
+  if (!vault) {
+    return (
+      <div className="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">Vault Not Found</h2>
+          <p className="text-slate-400">The vault you're looking for doesn't exist.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Auto-resize textarea
   useEffect(() => {
@@ -184,12 +92,12 @@ export function VaultDetailPage() {
   const textEntries = entries.filter(entry => entry.type === 'text');
   const mediaEntries = entries.filter(entry => entry.type !== 'text');
 
-  const recipients: Contact[] = vault.recipients
+  const recipients = vault.recipients
     .map(recipientId => contacts.find(c => c.id === recipientId))
-    .filter((contact): contact is Contact => contact !== undefined);
+    .filter((contact): contact is NonNullable<typeof contact> => contact !== undefined);
 
   const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !vault) return;
     
     const newEntry: VaultEntry & { folderName: string } = {
       id: Date.now().toString(),
@@ -202,6 +110,15 @@ export function VaultDetailPage() {
     };
 
     setEntries(prev => [...prev, newEntry]);
+    
+    // Add to vault context
+    addVaultEntry(vault.id, 'messages', {
+      type: 'text',
+      title: newEntry.title,
+      content: newMessage,
+      encrypted: true
+    });
+    
     setNewMessage('');
   };
 
@@ -233,7 +150,7 @@ export function VaultDetailPage() {
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files) return;
+    if (!files || !vault) return;
 
     Array.from(files).forEach(file => {
       const fileType = file.type.startsWith('image/') ? 'image' :
@@ -251,6 +168,14 @@ export function VaultDetailPage() {
       };
 
       setEntries(prev => [...prev, newEntry]);
+      
+      // Add to vault context
+      addVaultEntry(vault.id, 'media', {
+        type: fileType as 'text' | 'image' | 'video' | 'audio',
+        title: file.name,
+        content: file.name,
+        encrypted: true
+      });
     });
 
     if (fileInputRef.current) {
@@ -281,6 +206,20 @@ export function VaultDetailPage() {
       case 'audio': return Mic;
       default: return FileText;
     }
+  };
+
+  const getContactColor = (index: number) => {
+    const colors = [
+      'from-blue-500 to-blue-600',
+      'from-purple-500 to-purple-600',
+      'from-pink-500 to-pink-600',
+      'from-green-500 to-green-600',
+      'from-amber-500 to-amber-600',
+      'from-red-500 to-red-600',
+      'from-indigo-500 to-indigo-600',
+      'from-teal-500 to-teal-600'
+    ];
+    return colors[index % colors.length];
   };
 
   return (
@@ -360,31 +299,47 @@ export function VaultDetailPage() {
 
             {/* Recipients */}
             <div className="flex-1 p-6 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-slate-700/50 [&::-webkit-scrollbar-track]:my-2 [&::-webkit-scrollbar-thumb]:bg-slate-500 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-slate-400">
-              <h3 className="font-medium text-slate-300 mb-4">Recipients</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-medium text-slate-300">Recipients</h3>
+                <Button
+                  onClick={() => setShowContactsDialog(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                >
+                  <UserPlus className="w-4 h-4" />
+                </Button>
+              </div>
+              
               <div className="space-y-3">
                 {recipients.length > 0 ? (
                   recipients.map((recipient, index) => (
-                    <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-slate-800/30">
-                      <Avatar className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 flex-shrink-0">
+                    <div key={recipient.id} className="flex items-center space-x-3 p-3 rounded-lg bg-slate-800/30">
+                      <Avatar className={`w-8 h-8 bg-gradient-to-r ${getContactColor(index)} flex-shrink-0`}>
                         <AvatarFallback className="text-white font-semibold text-xs">
-                          {recipient?.name.charAt(0).toUpperCase()}
+                          {recipient.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white truncate">{recipient?.name}</p>
-                        <p className="text-xs text-slate-400 truncate">{recipient?.email}</p>
+                        <p className="text-sm font-medium text-white truncate">{recipient.name}</p>
+                        <p className="text-xs text-slate-400 truncate">{recipient.email}</p>
                       </div>
+                      {recipient.verified && (
+                        <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                      )}
                     </div>
                   ))
                 ) : (
                   <div className="text-center py-6">
                     <Users className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                    <p className="text-sm text-slate-400">No recipients assigned</p>
+                    <p className="text-sm text-slate-400 mb-3">No recipients assigned</p>
                     <Button
+                      onClick={() => setShowContactsDialog(true)}
                       variant="outline"
                       size="sm"
-                      className="mt-3 border-slate-600 text-slate-300 hover:bg-slate-800"
+                      className="border-slate-600 text-slate-300 hover:bg-slate-800"
                     >
+                      <UserPlus className="w-4 h-4 mr-2" />
                       Add Recipients
                     </Button>
                   </div>
@@ -394,6 +349,14 @@ export function VaultDetailPage() {
 
             {/* Vault Settings */}
             <div className="p-6 border-t border-slate-700/50 flex-shrink-0">
+              <Button
+                variant="outline"
+                className="w-full border-slate-600 text-slate-300 hover:bg-slate-800 mb-3"
+                onClick={() => setShowContactsDialog(true)}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Manage Recipients
+              </Button>
               <Button
                 variant="outline"
                 className="w-full border-slate-600 text-slate-300 hover:bg-slate-800"
@@ -627,6 +590,14 @@ export function VaultDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Vault Contacts Dialog */}
+      <VaultContactsDialog
+        open={showContactsDialog}
+        onOpenChange={setShowContactsDialog}
+        vaultId={vault.id}
+        vaultName={vault.name}
+      />
     </div>
   );
 }
