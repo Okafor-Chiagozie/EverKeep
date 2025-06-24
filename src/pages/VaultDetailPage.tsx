@@ -339,7 +339,7 @@ export function VaultDetailPage() {
                   <Lock className="w-3 h-3 mr-1" />
                   Encrypted
                 </Badge>
-                <Badge className="border-slate-600 text-slate-300 text-xs border">
+                <Badge className="border-slate-600 text-slate-300 text-xs border bg-transparent">
                   <Users className="w-3 h-3 mr-1" />
                   {recipients.length} recipients
                 </Badge>
