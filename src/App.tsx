@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { VaultProvider } from '@/contexts/VaultContext';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
-import { Navigation } from '@/components/Navigation';
+import Navigation from '@/components/Navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ProtectedRoute } from '@/components/ProtectedRoute';

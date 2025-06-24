@@ -23,7 +23,7 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
-export function Navigation() {
+export default function Navigation() {
   const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
