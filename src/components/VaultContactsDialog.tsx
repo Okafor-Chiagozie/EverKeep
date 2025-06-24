@@ -8,7 +8,8 @@ import {
   CheckCircle,
   User,
   Trash2,
-  UserPlus
+  UserPlus,
+  UserCheck
 } from 'lucide-react';
 import {
   Dialog,
@@ -22,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useVaults } from '@/contexts/VaultContext';
 
 interface VaultContactsDialogProps {
@@ -35,24 +37,25 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [activeTab, setActiveTab] = useState('assigned');
   
   const { contacts, vaults, updateVault } = useVaults();
   
   const currentVault = vaults.find(v => v.id === vaultId);
   const currentRecipients = currentVault?.recipients || [];
   
-  // First filter all contacts by search query
-  const searchFilteredContacts = contacts.filter(contact =>
+  // Filter contacts based on search
+  const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Then separate into assigned and available based on the search results
-  const assignedContacts = searchFilteredContacts.filter(contact => 
+  // Separate into assigned and available based on the filtered results
+  const assignedContacts = filteredContacts.filter(contact => 
     currentRecipients.includes(contact.id)
   );
   
-  const availableContacts = searchFilteredContacts.filter(contact => 
+  const availableContacts = filteredContacts.filter(contact => 
     !currentRecipients.includes(contact.id)
   );
 
@@ -91,6 +94,9 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
     
     setSelectedContacts([]);
     setIsUpdating(false);
+    
+    // Switch to assigned tab to show the newly added contacts
+    setActiveTab('assigned');
   };
 
   const getContactColor = (index: number) => {
@@ -143,11 +149,11 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
             </p>
           </DialogHeader>
 
-          {/* Search Bar - Global for both sections */}
+          {/* Search Bar */}
           <div className="relative mb-6">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
-              placeholder="Search all contacts..."
+              placeholder="Search contacts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-slate-800/50 border-slate-600 text-white"
@@ -164,34 +170,71 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
             )}
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-6 flex-1 min-h-0">
-            {/* Current Recipients */}
-            <div className="flex flex-col">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-                <CheckCircle className="w-5 h-5 text-green-400" />
-                <span>Current Recipients</span>
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-                  {searchQuery ? `${assignedContacts.length} of ${allAssignedContacts.length}` : allAssignedContacts.length}
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-2 bg-slate-800/50 mb-6">
+              <TabsTrigger 
+                value="assigned" 
+                className="data-[state=active]:bg-green-600 data-[state=active]:text-white flex items-center space-x-2"
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>Assigned Contacts</span>
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs ml-2">
+                  {allAssignedContacts.length}
                 </Badge>
-              </h3>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="add" 
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white flex items-center space-x-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Add Contacts</span>
+                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs ml-2">
+                  {contacts.length - allAssignedContacts.length}
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Assigned Contacts Tab */}
+            <TabsContent value="assigned" className="flex-1 flex flex-col mt-0">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span>Currently Assigned</span>
+                  {searchQuery && (
+                    <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/30 text-xs">
+                      {assignedContacts.length} of {allAssignedContacts.length} shown
+                    </Badge>
+                  )}
+                </h3>
+              </div>
               
               <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                 {assignedContacts.length === 0 ? (
-                  <div className="text-center py-8">
+                  <div className="text-center py-12">
                     {searchQuery ? (
                       <>
-                        <Search className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                        <Search className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                        <h4 className="text-lg font-semibold text-white mb-2">No Results Found</h4>
                         <p className="text-slate-400">No assigned contacts match "{searchQuery}"</p>
                         {allAssignedContacts.length > 0 && (
-                          <p className="text-xs text-slate-500 mt-2">
+                          <p className="text-sm text-slate-500 mt-2">
                             {allAssignedContacts.length} total assigned contact{allAssignedContacts.length !== 1 ? 's' : ''}
                           </p>
                         )}
                       </>
                     ) : (
                       <>
-                        <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                        <p className="text-slate-400">No contacts assigned to this vault</p>
+                        <Users className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                        <h4 className="text-lg font-semibold text-white mb-2">No Contacts Assigned</h4>
+                        <p className="text-slate-400 mb-6">This vault doesn't have any assigned contacts yet.</p>
+                        <Button
+                          onClick={() => setActiveTab('add')}
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        >
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Add Contacts
+                        </Button>
                       </>
                     )}
                   </div>
@@ -212,9 +255,14 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-white truncate">{contact.name}</h4>
+                              <div className="flex items-center space-x-2">
+                                <h4 className="font-medium text-white truncate">{contact.name}</h4>
+                                {contact.verified && (
+                                  <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                                )}
+                              </div>
                               <p className="text-sm text-slate-400 truncate">{contact.email}</p>
-                              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs mt-1">
+                              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs mt-1">
                                 {getRelationshipLabel(contact.role)}
                               </Badge>
                             </div>
@@ -234,14 +282,14 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
                   ))
                 )}
               </div>
-            </div>
+            </TabsContent>
 
-            {/* Available Contacts */}
-            <div className="flex flex-col">
+            {/* Add Contacts Tab */}
+            <TabsContent value="add" className="flex-1 flex flex-col mt-0">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
                   <UserPlus className="w-5 h-5 text-blue-400" />
-                  <span>Add Contacts</span>
+                  <span>Available to Add</span>
                   {availableContacts.length > 0 && (
                     <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
                       {availableContacts.length} available
@@ -252,7 +300,6 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
                   <Button
                     onClick={handleAddContacts}
                     disabled={isUpdating}
-                    size="sm"
                     className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     {isUpdating ? (
@@ -263,7 +310,7 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
                     ) : (
                       <>
                         <Plus className="w-4 h-4 mr-2" />
-                        Add ({selectedContacts.length})
+                        Add Selected ({selectedContacts.length})
                       </>
                     )}
                   </Button>
@@ -272,73 +319,92 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
 
               <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                 {availableContacts.length === 0 ? (
-                  <div className="text-center py-8">
+                  <div className="text-center py-12">
                     {searchQuery ? (
                       <>
-                        <Search className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                        <Search className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                        <h4 className="text-lg font-semibold text-white mb-2">No Results Found</h4>
                         <p className="text-slate-400">No available contacts match "{searchQuery}"</p>
                       </>
                     ) : allAssignedContacts.length === contacts.length ? (
                       <>
-                        <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                        <p className="text-slate-400">All contacts are already assigned to this vault</p>
+                        <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
+                        <h4 className="text-lg font-semibold text-white mb-2">All Contacts Assigned</h4>
+                        <p className="text-slate-400">All your contacts are already assigned to this vault.</p>
                       </>
                     ) : (
                       <>
-                        <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                        <p className="text-slate-400">No contacts available to add</p>
+                        <Users className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                        <h4 className="text-lg font-semibold text-white mb-2">No Contacts Available</h4>
+                        <p className="text-slate-400">You don't have any contacts to add to this vault.</p>
                       </>
                     )}
                   </div>
                 ) : (
-                  availableContacts.map((contact, index) => (
-                    <motion.div
-                      key={contact.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <Card
-                        className={`p-4 cursor-pointer transition-all border-2 ${
-                          selectedContacts.includes(contact.id)
-                            ? 'bg-blue-900/20 border-blue-500/50'
-                            : 'bg-slate-800/30 border-slate-700/50 hover:border-slate-600/50'
-                        }`}
-                        onClick={() => handleContactToggle(contact.id)}
+                  <>
+                    {/* Selection Info */}
+                    {selectedContacts.length > 0 && (
+                      <div className="p-3 rounded-lg bg-blue-900/20 border border-blue-500/30 mb-4">
+                        <p className="text-blue-300 text-sm">
+                          {selectedContacts.length} contact{selectedContacts.length !== 1 ? 's' : ''} selected for addition
+                        </p>
+                      </div>
+                    )}
+
+                    {availableContacts.map((contact, index) => (
+                      <motion.div
+                        key={contact.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
                       >
-                        <div className="flex items-center space-x-3">
-                          <Checkbox
-                            checked={selectedContacts.includes(contact.id)}
-                            onChange={() => handleContactToggle(contact.id)}
-                          />
-                          <Avatar className={`w-10 h-10 bg-gradient-to-r ${getContactColor(index)}`}>
-                            <AvatarFallback className="text-white font-semibold">
-                              {contact.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-white truncate">{contact.name}</h4>
-                            <p className="text-sm text-slate-400 truncate">{contact.email}</p>
-                            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs mt-1">
-                              {getRelationshipLabel(contact.role)}
-                            </Badge>
+                        <Card
+                          className={`p-4 cursor-pointer transition-all border-2 ${
+                            selectedContacts.includes(contact.id)
+                              ? 'bg-blue-900/20 border-blue-500/50'
+                              : 'bg-slate-800/30 border-slate-700/50 hover:border-slate-600/50'
+                          }`}
+                          onClick={() => handleContactToggle(contact.id)}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Checkbox
+                              checked={selectedContacts.includes(contact.id)}
+                              onChange={() => handleContactToggle(contact.id)}
+                            />
+                            <Avatar className={`w-10 h-10 bg-gradient-to-r ${getContactColor(index)}`}>
+                              <AvatarFallback className="text-white font-semibold">
+                                {contact.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2">
+                                <h4 className="font-medium text-white truncate">{contact.name}</h4>
+                                {contact.verified && (
+                                  <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-sm text-slate-400 truncate">{contact.email}</p>
+                              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs mt-1">
+                                {getRelationshipLabel(contact.role)}
+                              </Badge>
+                            </div>
                           </div>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  ))
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </>
                 )}
               </div>
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-6 border-t border-slate-700/50 mt-6">
             <div className="text-sm text-slate-400">
-              {allAssignedContacts.length} of {contacts.length} contacts assigned
+              {allAssignedContacts.length} of {contacts.length} contacts assigned to this vault
               {searchQuery && (
                 <span className="ml-2 text-blue-400">
-                  • Showing results for "{searchQuery}"
+                  • Filtered by "{searchQuery}"
                 </span>
               )}
             </div>
