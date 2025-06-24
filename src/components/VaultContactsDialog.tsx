@@ -115,7 +115,7 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
 
   const getRelationshipLabel = (role: string) => {
     switch (role) {
-      case 'family': return 'Family Member';
+      case 'family': return 'Family';
       case 'friend': return 'Friend';
       case 'colleague': return 'Colleague';
       default: return 'Other';

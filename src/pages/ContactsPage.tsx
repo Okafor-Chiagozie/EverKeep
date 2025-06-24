@@ -14,7 +14,9 @@ import {
   UserPlus,
   Edit,
   Trash2,
-  Eye
+  Eye,
+  CheckCircle,
+  X
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +24,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useVaults } from '@/contexts/VaultContext';
 import { AddContactDialog } from '@/components/AddContactDialog';
 
@@ -29,7 +34,19 @@ export function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const { contacts } = useVaults();
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'family'
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const { contacts, updateContact, deleteContact } = useVaults();
 
   const filteredContacts = contacts.filter(contact => {
     const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -58,7 +75,7 @@ export function ContactsPage() {
 
   const getRelationshipLabel = (role: string) => {
     switch (role) {
-      case 'family': return 'Family Member';
+      case 'family': return 'Family';
       case 'friend': return 'Friend';
       case 'colleague': return 'Colleague';
       default: return 'Other';
@@ -79,6 +96,58 @@ export function ContactsPage() {
     return colors[index % colors.length];
   };
 
+  const handleEditContact = (contact: any) => {
+    setSelectedContact(contact);
+    setEditForm({
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone || '',
+      role: contact.role
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleDeleteContact = (contact: any) => {
+    setSelectedContact(contact);
+    setShowDeleteDialog(true);
+  };
+
+  const handleUpdateContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedContact) return;
+
+    setIsUpdating(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    updateContact(selectedContact.id, {
+      name: editForm.name.trim(),
+      email: editForm.email.trim(),
+      phone: editForm.phone.trim() || undefined,
+      role: editForm.role as any
+    });
+    
+    setIsUpdating(false);
+    setShowEditDialog(false);
+    setSelectedContact(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedContact) return;
+
+    setIsDeleting(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    deleteContact(selectedContact.id);
+    
+    setIsDeleting(false);
+    setShowDeleteDialog(false);
+    setSelectedContact(null);
+  };
+
   // Calculate stats
   const totalContacts = contacts.length;
   const familyMembers = contacts.filter(c => c.role === 'family').length;
@@ -88,10 +157,41 @@ export function ContactsPage() {
 
   const categories = [
     { id: 'all', name: 'All Contacts', count: totalContacts },
-    { id: 'family', name: 'Family Members', count: familyMembers },
+    { id: 'family', name: 'Family', count: familyMembers },
     { id: 'friend', name: 'Friends', count: friends },
     { id: 'colleague', name: 'Colleagues', count: colleagues },
     { id: 'other', name: 'Other', count: others }
+  ];
+
+  const contactRoles = [
+    {
+      id: 'family',
+      name: 'Family',
+      description: 'Spouse, children, parents, siblings',
+      icon: Home,
+      color: 'blue'
+    },
+    {
+      id: 'friend',
+      name: 'Friend',
+      description: 'Close personal friend',
+      icon: Heart,
+      color: 'pink'
+    },
+    {
+      id: 'colleague',
+      name: 'Colleague',
+      description: 'Work colleague or professional contact',
+      icon: Briefcase,
+      color: 'purple'
+    },
+    {
+      id: 'other',
+      name: 'Other',
+      description: 'Other trusted person',
+      icon: Users,
+      color: 'slate'
+    }
   ];
 
   return (
@@ -132,7 +232,7 @@ export function ContactsPage() {
               color: 'blue' 
             },
             { 
-              title: 'Family Members', 
+              title: 'Family', 
               value: familyMembers, 
               icon: Home, 
               color: 'blue' 
@@ -276,7 +376,10 @@ export function ContactsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
-                          <DropdownMenuItem className="text-slate-300 hover:bg-slate-700">
+                          <DropdownMenuItem 
+                            className="text-slate-300 hover:bg-slate-700"
+                            onClick={() => handleEditContact(contact)}
+                          >
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Contact
                           </DropdownMenuItem>
@@ -284,7 +387,10 @@ export function ContactsPage() {
                             <Eye className="w-4 h-4 mr-2" />
                             View Assigned Vaults
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-400 hover:bg-red-900/20">
+                          <DropdownMenuItem 
+                            className="text-red-400 hover:bg-red-900/20"
+                            onClick={() => handleDeleteContact(contact)}
+                          >
                             <Trash2 className="w-4 h-4 mr-2" />
                             Remove Contact
                           </DropdownMenuItem>
@@ -313,12 +419,16 @@ export function ContactsPage() {
                         <span className="text-slate-400">Assigned to:</span>
                         <span className="font-medium text-white">{contact.vaultCount} vault{contact.vaultCount !== 1 ? 's' : ''}</span>
                       </div>
+                      {contact.verified && (
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                      )}
                     </div>
 
                     {/* Action Button */}
                     <Button
                       variant="outline"
                       className="w-full border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+                      onClick={() => handleEditContact(contact)}
                     >
                       Manage Contact
                     </Button>
@@ -369,6 +479,210 @@ export function ContactsPage() {
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
         />
+
+        {/* Edit Contact Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="max-w-2xl bg-slate-900/95 border-slate-700 mx-4 sm:mx-0">
+            <DialogTitle className="sr-only">Edit Contact</DialogTitle>
+            
+            <div className="p-6 sm:p-8 relative">
+              {/* Close Button */}
+              <button
+                onClick={() => setShowEditDialog(false)}
+                className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <DialogHeader className="pr-12">
+                <DialogTitle className="text-2xl text-white flex items-center space-x-3">
+                  <Edit className="w-6 h-6 text-blue-400" />
+                  <span>Edit Contact</span>
+                </DialogTitle>
+              </DialogHeader>
+
+              <form onSubmit={handleUpdateContact} className="space-y-6 mt-6">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="edit-name" className="text-slate-300">Full Name</Label>
+                    <Input
+                      id="edit-name"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                      required
+                      className="mt-2 bg-slate-800/50 border-slate-600 text-white"
+                      placeholder="Enter their full name"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="edit-email" className="text-slate-300">Email Address</Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      value={editForm.email}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                      required
+                      className="mt-2 bg-slate-800/50 border-slate-600 text-white"
+                      placeholder="Enter their email address"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="edit-phone" className="text-slate-300">Phone Number (Optional)</Label>
+                    <Input
+                      id="edit-phone"
+                      type="tel"
+                      value={editForm.phone}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                      className="mt-2 bg-slate-800/50 border-slate-600 text-white"
+                      placeholder="Enter their phone number"
+                    />
+                  </div>
+                </div>
+
+                {/* Relationship Selection */}
+                <div>
+                  <Label className="text-slate-300 mb-4 block">Relationship</Label>
+                  <RadioGroup 
+                    value={editForm.role} 
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, role: value }))} 
+                    className="space-y-3"
+                  >
+                    {contactRoles.map((roleOption) => (
+                      <motion.div
+                        key={roleOption.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Card
+                          className={`p-4 cursor-pointer transition-all border-2 ${
+                            editForm.role === roleOption.id
+                              ? `bg-${roleOption.color}-900/20 border-${roleOption.color}-500/50`
+                              : 'bg-slate-800/30 border-slate-700/50 hover:border-slate-600/50'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <RadioGroupItem value={roleOption.id} id={`edit-${roleOption.id}`} />
+                            <div className={`w-10 h-10 rounded-lg bg-${roleOption.color}-500/20 flex items-center justify-center`}>
+                              <roleOption.icon className={`w-5 h-5 text-${roleOption.color}-400`} />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-white">{roleOption.name}</h4>
+                              <p className="text-sm text-slate-400">{roleOption.description}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-700/50">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setShowEditDialog(false)}
+                    className="text-slate-400 hover:text-white"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={!editForm.name.trim() || !editForm.email.trim() || isUpdating}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    {isUpdating ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Updating...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="w-4 h-4" />
+                        <span>Update Contact</span>
+                      </div>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Contact Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent className="max-w-md bg-slate-900/95 border-slate-700 mx-4 sm:mx-0">
+            <DialogTitle className="sr-only">Delete Contact Confirmation</DialogTitle>
+            
+            <div className="p-6 sm:p-8 relative">
+              {/* Close Button */}
+              <button
+                onClick={() => setShowDeleteDialog(false)}
+                className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <DialogHeader className="pr-12 mb-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                    <Trash2 className="w-6 h-6 text-red-400" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-xl font-bold text-white">
+                      Delete Contact
+                    </DialogTitle>
+                    <p className="text-sm text-slate-400">This action cannot be undone</p>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                {/* Warning Message */}
+                <div className="p-4 rounded-xl bg-red-900/20 border border-red-500/30">
+                  <h4 className="font-semibold text-red-300 mb-2">Warning</h4>
+                  <p className="text-sm text-red-200">
+                    You are about to permanently delete <strong>{selectedContact?.name}</strong>. 
+                    This will also remove them from all assigned vaults.
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-700/50">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowDeleteDialog(false)}
+                    disabled={isDeleting}
+                    className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmDelete}
+                    disabled={isDeleting}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {isDeleting ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Deleting...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <Trash2 className="w-4 h-4" />
+                        <span>Delete Contact</span>
+                      </div>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Mobile bottom spacing */}
         <div className="h-4 sm:h-0"></div>

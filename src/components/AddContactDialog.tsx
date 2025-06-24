@@ -33,7 +33,7 @@ interface AddContactDialogProps {
 const contactRoles = [
   {
     id: 'family',
-    name: 'Family Member',
+    name: 'Family',
     description: 'Spouse, children, parents, siblings',
     icon: Home,
     color: 'blue'
