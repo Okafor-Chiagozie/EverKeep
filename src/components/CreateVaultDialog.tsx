@@ -40,7 +40,7 @@ const vaultSteps = [
   { id: 3, title: 'Success', description: 'Your vault has been created' }
 ];
 
-export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps) {
+export const CreateVaultDialog = ({ open, onOpenChange }: CreateVaultDialogProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -460,4 +460,4 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
       </DialogContent>
     </Dialog>
   );
-}
+};
