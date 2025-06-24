@@ -276,7 +276,7 @@ export function VaultDetailPage() {
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex overflow-hidden max-lg:mt-16">
+    <div className="h-screen max-lg:h-[calc(100dvh-4rem)] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex overflow-hidden max-lg:mt-16">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
