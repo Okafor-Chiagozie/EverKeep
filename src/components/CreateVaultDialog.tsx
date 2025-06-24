@@ -265,7 +265,7 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
                           onClick={handleSkipContacts}
                           className="border-slate-600 text-slate-300 hover:bg-slate-800"
                         >
-                          Create Vault Without Contacts
+                          Skip for Now
                         </Button>
                       </div>
                     </div>
@@ -397,13 +397,6 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
                     >
                       Start Adding Content
                     </Button>
-                    <Button
-                      variant="outline"
-                      onClick={handleClose}
-                      className="w-full border-slate-600 text-slate-300 hover:bg-slate-800"
-                    >
-                      Create Another Vault
-                    </Button>
                   </div>
                 </motion.div>
               )}
@@ -434,14 +427,6 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
                 
                 {currentStep === 2 ? (
                   <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      onClick={handleSkipContacts}
-                      disabled={isCreating}
-                      className="border-slate-600 text-slate-300 hover:bg-slate-800"
-                    >
-                      Skip for Now
-                    </Button>
                     <Button
                       onClick={handleCreateVault}
                       disabled={isCreating}
