@@ -19,15 +19,13 @@ import {
   Lock,
   Trash2,
   UserPlus,
-  CheckCircle,
-  MoreVertical
+  CheckCircle
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useVaults } from '@/contexts/VaultContext';
 import { VaultContactsDialog } from '@/components/VaultContactsDialog';
 import { DeleteVaultDialog } from '@/components/DeleteVaultDialog';
@@ -270,36 +268,14 @@ export function VaultDetailPage() {
             <div className="p-6 border-b border-slate-700/50 flex-shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-white">Vault Details</h2>
-                <div className="flex items-center space-x-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-slate-400 hover:text-white"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
-                      <DropdownMenuItem 
-                        onClick={() => setShowDeleteDialog(true)}
-                        className="text-red-400 hover:bg-red-900/20 focus:bg-red-900/20"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete Vault
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsSidebarOpen(false)}
-                    className="text-slate-400 hover:text-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
 
               <div className="flex items-center space-x-3 mb-4">
@@ -379,10 +355,10 @@ export function VaultDetailPage() {
             </div>
 
             {/* Vault Settings */}
-            <div className="p-6 border-t border-slate-700/50 flex-shrink-0">
+            <div className="p-6 border-t border-slate-700/50 flex-shrink-0 space-y-3">
               <Button
                 variant="outline"
-                className="w-full border-slate-600 text-slate-300 hover:bg-slate-800 mb-3"
+                className="w-full border-slate-600 text-slate-300 hover:bg-slate-800"
                 onClick={() => setShowContactsDialog(true)}
               >
                 <Users className="w-4 h-4 mr-2" />
@@ -390,10 +366,11 @@ export function VaultDetailPage() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full border-slate-600 text-slate-300 hover:bg-slate-800"
+                className="w-full border-red-500/50 text-red-400 hover:bg-red-900/20 hover:border-red-400"
+                onClick={() => setShowDeleteDialog(true)}
               >
-                <Settings className="w-4 h-4 mr-2" />
-                Vault Settings
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Vault
               </Button>
             </div>
           </motion.div>
