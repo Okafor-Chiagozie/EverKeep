@@ -53,6 +53,8 @@ export function VaultDetailPage() {
   const [activeTab, setActiveTab] = useState<'messages' | 'media'>('messages');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mediaEndRef = useRef<HTMLDivElement>(null);
 
   const { vaults, contacts, addVaultEntry } = useVaults();
   
@@ -91,6 +93,50 @@ export function VaultDetailPage() {
          setTextareaHeight(finalHeight);
       }
   }, [newMessage]);
+
+  // Auto-scroll to bottom when entries change
+  useEffect(() => {
+    const scrollToBottom = () => {
+      if (activeTab === 'messages' && messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'end'
+        });
+      } else if (activeTab === 'media' && mediaEndRef.current) {
+        mediaEndRef.current.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'end'
+        });
+      }
+    };
+
+    // Small delay to ensure DOM has updated
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [entries, activeTab]);
+
+  // Also scroll when switching tabs if there are entries
+  useEffect(() => {
+    if (entries.length > 0) {
+      const scrollToBottom = () => {
+        if (activeTab === 'messages' && messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'end'
+          });
+        } else if (activeTab === 'media' && mediaEndRef.current) {
+          mediaEndRef.current.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'end'
+          });
+        }
+      };
+
+      const timeoutId = setTimeout(scrollToBottom, 150);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [activeTab]);
 
   const textEntries = entries.filter(entry => entry.type === 'text');
   const mediaEntries = entries.filter(entry => entry.type !== 'text');
@@ -487,6 +533,8 @@ export function VaultDetailPage() {
                           </div>
                         </motion.div>
                       ))}
+                      {/* Invisible element to scroll to */}
+                      <div ref={messagesEndRef} />
                     </div>
                   )}
                 </div>
@@ -584,6 +632,8 @@ export function VaultDetailPage() {
                           </motion.div>
                         );
                       })}
+                      {/* Invisible element to scroll to */}
+                      <div ref={mediaEndRef} />
                     </div>
                   )}
                 </div>
