@@ -43,6 +43,7 @@ const vaultSteps = [
 export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Form data
@@ -117,7 +118,12 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
     
     addVault(newVault);
     setIsCreating(false);
-    setCurrentStep(3);
+    setIsSuccess(true);
+
+    // Auto-close after showing success message
+    setTimeout(() => {
+      handleClose();
+    }, 2000);
   };
 
   const handleContactToggle = (contactId: string) => {
@@ -135,6 +141,7 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
     setVaultDescription('');
     setSelectedContacts([]);
     setSearchQuery('');
+    setIsSuccess(false);
     onOpenChange(false);
   };
 
@@ -170,7 +177,7 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
             </DialogTitle>
             
             {/* Progress */}
-            {currentStep < 3 && (
+            {currentStep < 3 && !isSuccess && (
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-slate-300">
@@ -187,8 +194,41 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
 
           <div className="py-6">
             <AnimatePresence mode="wait">
+              {/* Success State */}
+              {isSuccess && (
+                <motion.div
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-8"
+                >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                    className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-500/20 flex items-center justify-center"
+                  >
+                    <CheckCircle className="w-10 h-10 text-green-400" />
+                  </motion.div>
+                  
+                  <h3 className="text-2xl font-bold text-white mb-4">Vault Created Successfully!</h3>
+                  <p className="text-slate-400 mb-2">
+                    <strong className="text-white">"{vaultName}"</strong> has been created and secured.
+                  </p>
+                  {selectedContacts.length > 0 ? (
+                    <p className="text-slate-400">
+                      {selectedContacts.length} trusted contact{selectedContacts.length !== 1 ? 's' : ''} can now access this vault.
+                    </p>
+                  ) : (
+                    <p className="text-slate-400">
+                      You can add trusted contacts to this vault anytime from the vault settings.
+                    </p>
+                  )}
+                </motion.div>
+              )}
+
               {/* Step 1: Vault Details */}
-              {currentStep === 1 && (
+              {currentStep === 1 && !isSuccess && (
                 <motion.div
                   key="step1"
                   initial={{ opacity: 0, x: 20 }}
@@ -230,7 +270,7 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
               )}
 
               {/* Step 2: Select Contacts */}
-              {currentStep === 2 && (
+              {currentStep === 2 && !isSuccess && (
                 <motion.div
                   key="step2"
                   initial={{ opacity: 0, x: 20 }}
@@ -358,53 +398,11 @@ export function CreateVaultDialog({ open, onOpenChange }: CreateVaultDialogProps
                   )}
                 </motion.div>
               )}
-
-              {/* Step 3: Success */}
-              {currentStep === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="text-center py-8"
-                >
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                    className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-500/20 flex items-center justify-center"
-                  >
-                    <CheckCircle className="w-10 h-10 text-green-400" />
-                  </motion.div>
-                  
-                  <h3 className="text-2xl font-bold text-white mb-4">Vault Created Successfully!</h3>
-                  <p className="text-slate-400 mb-2">
-                    <strong className="text-white">"{vaultName}"</strong> has been created and secured.
-                  </p>
-                  {selectedContacts.length > 0 ? (
-                    <p className="text-slate-400 mb-8">
-                      {selectedContacts.length} trusted contact{selectedContacts.length !== 1 ? 's' : ''} can now access this vault.
-                    </p>
-                  ) : (
-                    <p className="text-slate-400 mb-8">
-                      You can add trusted contacts to this vault anytime from the vault settings.
-                    </p>
-                  )}
-
-                  <div className="space-y-3">
-                    <Button
-                      onClick={handleClose}
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                      Start Adding Content
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
             </AnimatePresence>
           </div>
 
           {/* Footer Navigation */}
-          {currentStep < 3 && (
+          {currentStep < 3 && !isSuccess && (
             <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
               <Button
                 variant="outline"

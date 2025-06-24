@@ -36,13 +36,13 @@ export function Navigation() {
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 left-4 z-[60]">
+      {/* Mobile Menu Button - Better positioned */}
+      <div className="lg:hidden fixed top-6 left-6 z-[60]">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="bg-slate-900/95 backdrop-blur-xl border-slate-700/50 hover:bg-slate-800/95 text-slate-300 hover:text-white shadow-lg"
+          className="bg-slate-900/95 backdrop-blur-xl border-slate-700/50 hover:bg-slate-800/95 text-slate-300 hover:text-white shadow-xl"
         >
           {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
         </Button>
