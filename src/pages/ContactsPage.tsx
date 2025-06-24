@@ -14,7 +14,6 @@ import {
   UserPlus,
   Edit,
   Trash2,
-  Eye,
   CheckCircle,
   X
 } from 'lucide-react';
@@ -370,29 +369,18 @@ export function ContactsPage() {
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="p-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            className="p-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex-shrink-0"
                           >
                             <MoreVertical className="w-4 h-4 text-slate-400" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
                           <DropdownMenuItem 
-                            className="text-slate-300 hover:bg-slate-700"
-                            onClick={() => handleEditContact(contact)}
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Contact
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-slate-300 hover:bg-slate-700">
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Assigned Vaults
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
                             className="text-red-400 hover:bg-red-900/20"
                             onClick={() => handleDeleteContact(contact)}
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Remove Contact
+                            Delete Contact
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -430,7 +418,8 @@ export function ContactsPage() {
                       className="w-full border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
                       onClick={() => handleEditContact(contact)}
                     >
-                      Manage Contact
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Contact
                     </Button>
 
                     {/* Added Date */}
