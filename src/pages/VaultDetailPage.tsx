@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Shield, 
   ArrowLeft, 
@@ -19,15 +19,18 @@ import {
   Lock,
   Trash2,
   UserPlus,
-  CheckCircle
+  CheckCircle,
+  MoreVertical
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useVaults } from '@/contexts/VaultContext';
 import { VaultContactsDialog } from '@/components/VaultContactsDialog';
+import { DeleteVaultDialog } from '@/components/DeleteVaultDialog';
 
 // TypeScript interfaces
 interface VaultEntry {
@@ -42,9 +45,11 @@ interface VaultEntry {
 
 export function VaultDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [newMessage, setNewMessage] = useState<string>('');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [showContactsDialog, setShowContactsDialog] = useState<boolean>(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
   const [textareaHeight, setTextareaHeight] = useState<number>(40);
   const [entries, setEntries] = useState<(VaultEntry & { folderName: string })[]>([]);
   const [activeTab, setActiveTab] = useState<'messages' | 'media'>('messages');
@@ -222,6 +227,10 @@ export function VaultDetailPage() {
     return colors[index % colors.length];
   };
 
+  const handleVaultDeleted = () => {
+    navigate('/vaults');
+  };
+
   return (
     <div className="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex overflow-hidden">
       {/* Hidden file input */}
@@ -261,14 +270,36 @@ export function VaultDetailPage() {
             <div className="p-6 border-b border-slate-700/50 flex-shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-white">Vault Details</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="text-slate-400 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-slate-400 hover:text-white"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
+                      <DropdownMenuItem 
+                        onClick={() => setShowDeleteDialog(true)}
+                        className="text-red-400 hover:bg-red-900/20 focus:bg-red-900/20"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Vault
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="text-slate-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="flex items-center space-x-3 mb-4">
@@ -375,6 +406,14 @@ export function VaultDetailPage() {
         <div className="p-4 border-b border-slate-700/50 bg-slate-800/30 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 min-w-0 flex-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/vaults')}
+                className="text-slate-400 hover:text-white mr-2"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
               <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-500/30 flex-shrink-0">
                 <Shield className="w-5 h-5 text-blue-400" />
               </div>
@@ -597,6 +636,15 @@ export function VaultDetailPage() {
         onOpenChange={setShowContactsDialog}
         vaultId={vault.id}
         vaultName={vault.name}
+      />
+
+      {/* Delete Vault Dialog */}
+      <DeleteVaultDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        vaultId={vault.id}
+        vaultName={vault.name}
+        onDeleted={handleVaultDeleted}
       />
     </div>
   );

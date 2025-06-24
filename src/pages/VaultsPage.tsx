@@ -12,20 +12,27 @@ import {
   Mic,
   CheckCircle,
   Archive,
-  Calendar
+  Calendar,
+  MoreVertical,
+  Trash2,
+  Settings
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useVaults } from '@/contexts/VaultContext';
 import { CreateVaultDialog } from '@/components/CreateVaultDialog';
+import { DeleteVaultDialog } from '@/components/DeleteVaultDialog';
 
 export function VaultsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [deleteVaultId, setDeleteVaultId] = useState<string | null>(null);
+  const [deleteVaultName, setDeleteVaultName] = useState<string>('');
   const { vaults, contacts } = useVaults();
   const navigate = useNavigate();
 
@@ -71,6 +78,11 @@ export function VaultsPage() {
 
   const handleOpenVault = (vaultId: string) => {
     navigate(`/vaults/${vaultId}`);
+  };
+
+  const handleDeleteVault = (vault: any) => {
+    setDeleteVaultId(vault.id);
+    setDeleteVaultName(vault.name);
   };
 
   const filterOptions = [
@@ -208,14 +220,44 @@ export function VaultsPage() {
                         </div>
                       </div>
                       
-                      <Badge className={`${vaultStatus === 'active' 
-                        ? 'bg-green-500/20 text-green-400 border-green-500/30' 
-                        : 'bg-slate-500/20 text-slate-400 border-slate-500/30'
-                      } border text-xs`}>
-                        {vaultStatus === 'active' && <CheckCircle className="w-3 h-3 mr-1" />}
-                        {vaultStatus === 'empty' && <Archive className="w-3 h-3 mr-1" />}
-                        {vaultStatus === 'active' ? 'Active' : 'Empty'}
-                      </Badge>
+                      <div className="flex items-center space-x-2">
+                        <Badge className={`${vaultStatus === 'active' 
+                          ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                          : 'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                        } border text-xs`}>
+                          {vaultStatus === 'active' && <CheckCircle className="w-3 h-3 mr-1" />}
+                          {vaultStatus === 'empty' && <Archive className="w-3 h-3 mr-1" />}
+                          {vaultStatus === 'active' ? 'Active' : 'Empty'}
+                        </Badge>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="p-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            >
+                              <MoreVertical className="w-4 h-4 text-slate-400" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
+                            <DropdownMenuItem 
+                              onClick={() => handleOpenVault(vault.id)}
+                              className="text-slate-300 hover:bg-slate-700"
+                            >
+                              <Settings className="w-4 h-4 mr-2" />
+                              Vault Settings
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteVault(vault)}
+                              className="text-red-400 hover:bg-red-900/20"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Vault
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
 
                     {/* Content Summary */}
@@ -328,6 +370,25 @@ export function VaultsPage() {
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
         />
+
+        {/* Delete Vault Dialog */}
+        {deleteVaultId && (
+          <DeleteVaultDialog
+            open={!!deleteVaultId}
+            onOpenChange={(open) => {
+              if (!open) {
+                setDeleteVaultId(null);
+                setDeleteVaultName('');
+              }
+            }}
+            vaultId={deleteVaultId}
+            vaultName={deleteVaultName}
+            onDeleted={() => {
+              setDeleteVaultId(null);
+              setDeleteVaultName('');
+            }}
+          />
+        )}
 
         {/* Mobile bottom spacing */}
         <div className="h-4 sm:h-0"></div>
