@@ -41,10 +41,19 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
   const currentVault = vaults.find(v => v.id === vaultId);
   const currentRecipients = currentVault?.recipients || [];
   
-  // Filter contacts based on search
-  const filteredContacts = contacts.filter(contact =>
+  // First filter all contacts by search query
+  const searchFilteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  // Then separate into assigned and available based on the search results
+  const assignedContacts = searchFilteredContacts.filter(contact => 
+    currentRecipients.includes(contact.id)
+  );
+  
+  const availableContacts = searchFilteredContacts.filter(contact => 
+    !currentRecipients.includes(contact.id)
   );
 
   const handleContactToggle = (contactId: string) => {
@@ -107,8 +116,8 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
     }
   };
 
-  const assignedContacts = contacts.filter(contact => currentRecipients.includes(contact.id));
-  const availableContacts = filteredContacts.filter(contact => !currentRecipients.includes(contact.id));
+  // Get all assigned contacts (not filtered by search) for the summary
+  const allAssignedContacts = contacts.filter(contact => currentRecipients.includes(contact.id));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -134,19 +143,57 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
             </p>
           </DialogHeader>
 
+          {/* Search Bar - Global for both sections */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Search all contacts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-slate-800/50 border-slate-600 text-white"
+            />
+            {searchQuery && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="w-4 h-4 rounded-full bg-slate-600 hover:bg-slate-500 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="grid lg:grid-cols-2 gap-6 flex-1 min-h-0">
             {/* Current Recipients */}
             <div className="flex flex-col">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
                 <CheckCircle className="w-5 h-5 text-green-400" />
-                <span>Current Recipients ({assignedContacts.length})</span>
+                <span>Current Recipients</span>
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                  {searchQuery ? `${assignedContacts.length} of ${allAssignedContacts.length}` : allAssignedContacts.length}
+                </Badge>
               </h3>
               
               <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                 {assignedContacts.length === 0 ? (
                   <div className="text-center py-8">
-                    <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                    <p className="text-slate-400">No contacts assigned to this vault</p>
+                    {searchQuery ? (
+                      <>
+                        <Search className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-400">No assigned contacts match "{searchQuery}"</p>
+                        {allAssignedContacts.length > 0 && (
+                          <p className="text-xs text-slate-500 mt-2">
+                            {allAssignedContacts.length} total assigned contact{allAssignedContacts.length !== 1 ? 's' : ''}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-400">No contacts assigned to this vault</p>
+                      </>
+                    )}
                   </div>
                 ) : (
                   assignedContacts.map((contact, index) => (
@@ -195,6 +242,11 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
                 <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
                   <UserPlus className="w-5 h-5 text-blue-400" />
                   <span>Add Contacts</span>
+                  {availableContacts.length > 0 && (
+                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
+                      {availableContacts.length} available
+                    </Badge>
+                  )}
                 </h3>
                 {selectedContacts.length > 0 && (
                   <Button
@@ -218,29 +270,23 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
                 )}
               </div>
 
-              {/* Search */}
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  placeholder="Search contacts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-slate-800/50 border-slate-600 text-white"
-                />
-              </div>
-
               <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                 {availableContacts.length === 0 ? (
                   <div className="text-center py-8">
                     {searchQuery ? (
                       <>
                         <Search className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                        <p className="text-slate-400">No contacts found matching "{searchQuery}"</p>
+                        <p className="text-slate-400">No available contacts match "{searchQuery}"</p>
                       </>
-                    ) : (
+                    ) : allAssignedContacts.length === contacts.length ? (
                       <>
                         <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
                         <p className="text-slate-400">All contacts are already assigned to this vault</p>
+                      </>
+                    ) : (
+                      <>
+                        <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-400">No contacts available to add</p>
                       </>
                     )}
                   </div>
@@ -289,7 +335,12 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
           {/* Footer */}
           <div className="flex items-center justify-between pt-6 border-t border-slate-700/50 mt-6">
             <div className="text-sm text-slate-400">
-              {assignedContacts.length} of {contacts.length} contacts assigned
+              {allAssignedContacts.length} of {contacts.length} contacts assigned
+              {searchQuery && (
+                <span className="ml-2 text-blue-400">
+                  • Showing results for "{searchQuery}"
+                </span>
+              )}
             </div>
             <Button
               onClick={() => onOpenChange(false)}
