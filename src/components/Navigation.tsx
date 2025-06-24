@@ -38,7 +38,7 @@ export default function Navigation() {
     <>
       {/* Mobile Header - Fixed position */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between px-4 py-2.5">
           <Button
             variant="outline"
             size="sm"
