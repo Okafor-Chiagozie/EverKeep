@@ -46,7 +46,7 @@ function App() {
                 
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
-                    <div className="flex min-h-screen">
+                    <div className="flex min-h-[100dvh]">
                       <Navigation />
                       <main className="flex-1 min-w-0 overflow-y-auto">
                         <Dashboard />
@@ -57,7 +57,7 @@ function App() {
                 
                 <Route path="/vaults" element={
                   <ProtectedRoute>
-                    <div className="flex min-h-screen">
+                    <div className="flex min-h-[100dvh]">
                       <Navigation />
                       <main className="flex-1 min-w-0 overflow-y-auto">
                         <VaultsPage />
@@ -68,7 +68,7 @@ function App() {
                 
                 <Route path="/vaults/:id" element={
                   <ProtectedRoute>
-                    <div className="flex min-h-screen">
+                    <div className="flex min-h-[100dvh]">
                       <Navigation />
                       <main className="flex-1 min-w-0 overflow-y-auto">
                         <VaultDetailPage />
@@ -79,7 +79,7 @@ function App() {
                 
                 <Route path="/contacts" element={
                   <ProtectedRoute>
-                    <div className="flex min-h-screen">
+                    <div className="flex min-h-[100dvh]">
                       <Navigation />
                       <main className="flex-1 min-w-0 overflow-y-auto">
                         <ContactsPage />
@@ -90,7 +90,7 @@ function App() {
                 
                 <Route path="/timeline" element={
                   <ProtectedRoute>
-                    <div className="flex min-h-screen">
+                    <div className="flex min-h-[100dvh]">
                       <Navigation />
                       <main className="flex-1 min-w-0 overflow-y-auto">
                         <TimelinePage />
@@ -101,7 +101,7 @@ function App() {
                 
                 <Route path="/settings" element={
                   <ProtectedRoute>
-                    <div className="flex min-h-screen">
+                    <div className="flex min-h-[100dvh]">
                       <Navigation />
                       <main className="flex-1 min-w-0 overflow-y-auto">
                         <SettingsPage />
