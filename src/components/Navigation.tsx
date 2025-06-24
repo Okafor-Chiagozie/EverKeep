@@ -36,16 +36,26 @@ export function Navigation() {
 
   return (
     <>
-      {/* Mobile Menu Button - Positioned at top left with proper z-index */}
-      <div className="lg:hidden fixed top-4 left-4 z-[70]">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="w-12 h-12 rounded-full bg-slate-900/95 backdrop-blur-xl border-slate-700/50 hover:bg-slate-800/95 text-slate-300 hover:text-white shadow-2xl border-2 p-0"
-        >
-          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </Button>
+      {/* Mobile Menu Button - Now positioned to be above content */}
+      <div className="lg:hidden">
+        <div className="flex items-center justify-between p-4 bg-slate-900/50 border-b border-slate-700/50">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="w-10 h-10 rounded-lg bg-slate-800/50 backdrop-blur-xl border-slate-700/50 hover:bg-slate-700/50 text-slate-300 hover:text-white p-0"
+          >
+            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </Button>
+          
+          {/* App Logo/Title for mobile */}
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-lg font-bold text-white">EverKeep</span>
+          </div>
+        </div>
       </div>
 
       {/* Mobile Overlay */}
