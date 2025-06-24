@@ -36,9 +36,9 @@ export function Navigation() {
 
   return (
     <>
-      {/* Mobile Menu Button - Now positioned to be above content */}
-      <div className="lg:hidden">
-        <div className="flex items-center justify-between p-4 bg-slate-900/50 border-b border-slate-700/50">
+      {/* Mobile Header - Fixed position */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50">
+        <div className="flex items-center justify-between p-4">
           <Button
             variant="outline"
             size="sm"
@@ -48,7 +48,6 @@ export function Navigation() {
             {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </Button>
           
-          {/* App Logo/Title for mobile */}
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
               <Shield className="w-4 h-4 text-white" />
@@ -58,13 +57,16 @@ export function Navigation() {
         </div>
       </div>
 
+      {/* Mobile Content Spacer */}
+      <div className="lg:hidden h-16"></div>
+
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[45]"
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-45"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -77,8 +79,8 @@ export function Navigation() {
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={`
-          fixed left-0 top-0 h-[100dvh] w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50] shadow-2xl
-          lg:translate-x-0 lg:z-auto lg:w-64 xl:w-72 2xl:w-80 lg:shadow-none lg:fixed lg:h-screen
+          fixed left-0 top-0 h-[100dvh] w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-50 shadow-2xl
+          lg:translate-x-0 lg:z-auto lg:w-64 xl:w-72 2xl:w-80 lg:shadow-none lg:relative lg:h-screen
           flex flex-col navigation-sidebar
         `}
       >
@@ -92,6 +94,15 @@ export function Navigation() {
               <h1 className="text-xl font-bold text-white truncate">EverKeep</h1>
               <p className="text-xs text-slate-400">Digital Vault</p>
             </div>
+            {/* Mobile close button in header */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="lg:hidden w-8 h-8 p-0 text-slate-400 hover:text-white hover:bg-slate-800/50"
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </div>
 
           <Button 
@@ -131,7 +142,6 @@ export function Navigation() {
 
         {/* Footer Section */}
         <div className="p-4 pb-8 lg:p-6 border-t border-slate-700/50 flex-shrink-0">
-
           {/* Sign Out Button */}
           <Button
             variant="ghost"

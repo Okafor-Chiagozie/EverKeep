@@ -276,7 +276,7 @@ export function VaultDetailPage() {
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex overflow-hidden max-lg:mt-16">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -433,7 +433,7 @@ export function VaultDetailPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/vaults')}
-                className="text-slate-400 hover:text-white mr-2"
+                className="text-slate-400 hover:text-white mr-2 max-sm:hidden"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
