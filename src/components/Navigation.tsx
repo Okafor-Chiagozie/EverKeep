@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Shield, 
@@ -26,7 +26,13 @@ const navItems = [
 export function Navigation() {
   const { logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleCreateVault = () => {
+    navigate('/vaults');
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -79,8 +85,8 @@ export function Navigation() {
           </div>
 
           <Button 
+            onClick={handleCreateVault}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-sm py-3 h-auto shadow-lg"
-            onClick={() => setIsMobileMenuOpen(false)}
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Vault
