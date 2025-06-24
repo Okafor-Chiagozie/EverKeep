@@ -34,7 +34,7 @@ export interface Contact {
   name: string;
   email: string;
   phone?: string;
-  role: 'next-of-kin' | 'witness' | 'executor' | 'friend' | 'family';
+  role: 'family' | 'friend' | 'colleague' | 'other';
   verified: boolean;
   vaultCount: number;
   addedAt: Date;
@@ -113,7 +113,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
           id: '1',
           name: 'Sarah Johnson',
           email: 'sarah@example.com',
-          role: 'next-of-kin',
+          role: 'family',
           verified: true,
           vaultCount: 2,
           addedAt: new Date('2024-01-01')
@@ -122,7 +122,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
           id: '2',
           name: 'Michael Chen',
           email: 'michael@example.com',
-          role: 'executor',
+          role: 'friend',
           verified: false,
           vaultCount: 1,
           addedAt: new Date('2024-01-05')
