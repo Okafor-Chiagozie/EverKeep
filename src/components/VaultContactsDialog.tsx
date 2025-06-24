@@ -228,13 +228,13 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
                         <Users className="w-16 h-16 text-slate-400 mx-auto mb-4" />
                         <h4 className="text-lg font-semibold text-white mb-2">No Contacts Assigned</h4>
                         <p className="text-slate-400 mb-6">This vault doesn't have any assigned contacts yet.</p>
-                        <Button
+                        {/* <Button
                           onClick={() => setActiveTab('add')}
                           className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                         >
                           <UserPlus className="w-4 h-4 mr-2" />
                           Add Contacts
-                        </Button>
+                        </Button> */}
                       </>
                     )}
                   </div>
@@ -328,9 +328,10 @@ export function VaultContactsDialog({ open, onOpenChange, vaultId, vaultName }: 
                       </>
                     ) : allAssignedContacts.length === contacts.length ? (
                       <>
-                        <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                        <h4 className="text-lg font-semibold text-white mb-2">All Contacts Assigned</h4>
-                        <p className="text-slate-400">All your contacts are already assigned to this vault.</p>
+                        {/* <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" /> */}
+                        <Users className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                        <h4 className="text-lg font-semibold text-white mb-2">No Contacts Available</h4>
+                        <p className="text-slate-400">No contacts available to be assigned to this vault.</p>
                       </>
                     ) : (
                       <>
