@@ -1,25 +1,24 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Shield, 
   Plus, 
   Search, 
-  Filter, 
-  MoreVertical,
-  Clock,
   Users,
   FileText,
   Image,
   Video,
   Mic,
-  Lock,
   CheckCircle,
-  AlertCircle
+  Archive,
+  Calendar
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useVaults } from '@/contexts/VaultContext';
 import { CreateVaultDialog } from '@/components/CreateVaultDialog';
 
@@ -28,48 +27,62 @@ export function VaultsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { vaults, contacts } = useVaults();
+  const navigate = useNavigate();
+
+  const getVaultStatus = (vault: any) => {
+    const hasContent = vault.folders.some((folder: any) => folder.entries.length > 0);
+    return hasContent ? 'active' : 'empty';
+  };
 
   const filteredVaults = vaults.filter(vault => {
     const matchesSearch = vault.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          vault.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || vault.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const vaultStatus = getVaultStatus(vault);
+    const matchesFilter = statusFilter === 'all' || 
+                         (statusFilter === 'active' && vaultStatus === 'active') ||
+                         (statusFilter === 'empty' && vaultStatus === 'empty') ||
+                         (statusFilter === 'recent' && new Date(vault.lastModified) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+    return matchesSearch && matchesFilter;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'sealed': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'delivered': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
-    }
-  };
+  const getContentSummary = (vault: any) => {
+    let textEntries = 0;
+    let mediaFiles = 0;
 
-  const getVaultStats = (vault: any) => {
-    const totalEntries = vault.folders.reduce((acc: number, folder: any) => acc + folder.entries.length, 0);
-    const entryTypes = vault.folders.reduce((acc: any, folder: any) => {
+    vault.folders.forEach((folder: any) => {
       folder.entries.forEach((entry: any) => {
-        acc[entry.type] = (acc[entry.type] || 0) + 1;
+        if (entry.type === 'text') {
+          textEntries++;
+        } else {
+          mediaFiles++;
+        }
       });
-      return acc;
-    }, {});
+    });
 
-    return { totalEntries, entryTypes };
+    return { textEntries, mediaFiles };
   };
 
-  const getEntryIcon = (type: string) => {
-    switch (type) {
-      case 'text': return FileText;
-      case 'image': return Image;
-      case 'video': return Video;
-      case 'audio': return Mic;
-      default: return FileText;
-    }
+  const getAssignedContacts = (vault: any) => {
+    return vault.recipients
+      .map((recipientId: string) => contacts.find(c => c.id === recipientId))
+      .filter(Boolean)
+      .slice(0, 3); // Show max 3 contacts
   };
+
+  const handleOpenVault = (vaultId: string) => {
+    navigate(`/vaults/${vaultId}`);
+  };
+
+  const filterOptions = [
+    { id: 'all', name: 'All' },
+    { id: 'active', name: 'Active Vaults' },
+    { id: 'empty', name: 'Empty Vaults' },
+    { id: 'recent', name: 'Recently Updated' }
+  ];
 
   return (
     <div className="w-full min-h-screen">
-      <div className="px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-8">
+      <div className="px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-8 lg:mt-0 mt-16">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -82,7 +95,7 @@ export function VaultsPage() {
               <span className="truncate">Your Vaults</span>
             </h1>
             <p className="text-sm sm:text-base text-slate-400 mt-2">
-              Secure digital vaults preserving your most precious memories
+              Secure digital storage for your most precious memories and important information
             </p>
           </div>
 
@@ -103,7 +116,7 @@ export function VaultsPage() {
           className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:space-x-4"
         >
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
               placeholder="Search vaults..."
               value={searchQuery}
@@ -113,19 +126,19 @@ export function VaultsPage() {
           </div>
 
           <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
-            {['all', 'active', 'sealed', 'delivered'].map((status) => (
+            {filterOptions.map((option) => (
               <Button
-                key={status}
-                variant={statusFilter === status ? 'default' : 'outline'}
+                key={option.id}
+                variant={statusFilter === option.id ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setStatusFilter(status)}
+                onClick={() => setStatusFilter(option.id)}
                 className={
-                  statusFilter === status
+                  statusFilter === option.id
                     ? 'bg-blue-600 hover:bg-blue-700 whitespace-nowrap'
                     : 'border-slate-600 text-slate-300 hover:bg-slate-800 whitespace-nowrap'
                 }
               >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
+                {option.name}
               </Button>
             ))}
           </div>
@@ -158,13 +171,12 @@ export function VaultsPage() {
 
         {/* Vaults Grid */}
         {filteredVaults.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {filteredVaults.map((vault, index) => {
-              const { totalEntries, entryTypes } = getVaultStats(vault);
-              const recipientNames = vault.recipients
-                .map(id => contacts.find(c => c.id === id)?.name)
-                .filter(Boolean)
-                .slice(0, 2);
+              const { textEntries, mediaFiles } = getContentSummary(vault);
+              const assignedContacts = getAssignedContacts(vault);
+              const vaultStatus = getVaultStatus(vault);
+              const remainingContacts = vault.recipients.length - assignedContacts.length;
 
               return (
                 <motion.div
@@ -175,111 +187,140 @@ export function VaultsPage() {
                   whileHover={{ y: -4 }}
                   className="group"
                 >
-                  <Card className="p-4 sm:p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 h-full">
+                  <Card className="p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 h-full">
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3 flex-1 min-w-0">
                         <motion.div
                           whileHover={{ rotate: 180 }}
                           transition={{ duration: 0.3 }}
-                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-500/30 flex-shrink-0"
+                          className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-500/30 flex-shrink-0"
                         >
-                          <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                          <Shield className="w-6 h-6 text-blue-400" />
                         </motion.div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-white group-hover:text-blue-300 transition-colors truncate text-sm sm:text-base">
+                          <h3 className="font-semibold text-white group-hover:text-blue-300 transition-colors truncate text-base">
                             {vault.name}
                           </h3>
-                          <p className="text-xs sm:text-sm text-slate-400 line-clamp-2">
+                          <p className="text-sm text-slate-400 line-clamp-2 mt-1">
                             {vault.description}
                           </p>
                         </div>
                       </div>
                       
-                      <Button variant="ghost" size="sm" className="p-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                        <MoreVertical className="w-4 h-4 text-slate-400" />
-                      </Button>
-                    </div>
-
-                    {/* Status Badge */}
-                    <div className="flex items-center justify-between mb-4">
-                      <Badge className={`${getStatusColor(vault.status)} border text-xs`}>
-                        {vault.status === 'active' && <CheckCircle className="w-3 h-3 mr-1" />}
-                        {vault.status === 'sealed' && <Lock className="w-3 h-3 mr-1" />}
-                        {vault.status === 'delivered' && <CheckCircle className="w-3 h-3 mr-1" />}
-                        {vault.status.charAt(0).toUpperCase() + vault.status.slice(1)}
+                      <Badge className={`${vaultStatus === 'active' 
+                        ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                        : 'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                      } border text-xs`}>
+                        {vaultStatus === 'active' && <CheckCircle className="w-3 h-3 mr-1" />}
+                        {vaultStatus === 'empty' && <Archive className="w-3 h-3 mr-1" />}
+                        {vaultStatus === 'active' ? 'Active' : 'Empty'}
                       </Badge>
-                      
-                      <div className="flex items-center space-x-2 text-xs text-slate-400">
-                        <Clock className="w-3 h-3" />
-                        <span className="hidden sm:inline">{new Date(vault.lastModified).toLocaleDateString()}</span>
-                        <span className="sm:hidden">{new Date(vault.lastModified).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                      </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-400">Total Entries</span>
-                        <span className="font-medium text-white">{totalEntries}</span>
-                      </div>
-
-                      {/* Entry Types */}
-                      {totalEntries > 0 && (
-                        <div className="flex items-center space-x-2 flex-wrap gap-1">
-                          {Object.entries(entryTypes).map(([type, count]) => {
-                            const IconComponent = getEntryIcon(type);
-                            return (
-                              <div key={type} className="flex items-center space-x-1 text-xs text-slate-400">
-                                <IconComponent className="w-3 h-3" />
-                                <span>{count as number}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* Recipients */}
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-400">Recipients</span>
+                    {/* Content Summary */}
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-slate-300 mb-2">Content Summary</h4>
+                      <div className="flex items-center space-x-4 text-sm text-slate-400">
                         <div className="flex items-center space-x-1">
-                          <Users className="w-3 h-3 text-slate-400" />
-                          <span className="text-white">{vault.recipients.length}</span>
+                          <FileText className="w-4 h-4" />
+                          <span>{textEntries} text entries</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <div className="flex items-center space-x-1">
+                            <Image className="w-4 h-4" />
+                            <Video className="w-4 h-4" />
+                            <Mic className="w-4 h-4" />
+                          </div>
+                          <span>{mediaFiles} media files</span>
                         </div>
                       </div>
-                      
-                      {recipientNames.length > 0 && (
-                        <div className="text-xs text-slate-400 truncate">
-                          {recipientNames.join(', ')}
-                          {vault.recipients.length > 2 && ` +${vault.recipients.length - 2} more`}
-                        </div>
-                      )}
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex space-x-2 pt-4 border-t border-slate-700/50">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-800 text-xs sm:text-sm"
-                      >
-                        <FileText className="w-3 h-3 mr-1" />
-                        View
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-800 text-xs sm:text-sm"
-                      >
-                        <Plus className="w-3 h-3 mr-1" />
-                        Add
-                      </Button>
+                    {/* Assigned Contacts */}
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-slate-300 mb-2">Assigned Contacts</h4>
+                      <div className="flex items-center space-x-2">
+                        {assignedContacts.length > 0 ? (
+                          <>
+                            <div className="flex -space-x-2">
+                              {assignedContacts.map((contact, idx) => (
+                                <Avatar key={idx} className="w-8 h-8 border-2 border-slate-800 bg-gradient-to-r from-blue-500 to-purple-600">
+                                  <AvatarFallback className="text-white font-semibold text-xs">
+                                    {contact?.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                              ))}
+                              {remainingContacts > 0 && (
+                                <div className="w-8 h-8 rounded-full bg-slate-700 border-2 border-slate-800 flex items-center justify-center">
+                                  <span className="text-xs text-slate-300">+{remainingContacts}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-1 text-sm text-slate-400">
+                              <Users className="w-3 h-3" />
+                              <span>{vault.recipients.length} total</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-sm text-slate-400 flex items-center space-x-2">
+                            <Users className="w-4 h-4" />
+                            <span>No contacts assigned</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Last Modified */}
+                    <div className="flex items-center justify-between text-xs text-slate-400 mb-4">
+                      <div className="flex items-center space-x-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>Modified {new Date(vault.lastModified).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <Button
+                      onClick={() => handleOpenVault(vault.id)}
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      Open Vault
+                    </Button>
                   </Card>
                 </motion.div>
               );
             })}
           </div>
+        )}
+
+        {/* No Results State */}
+        {filteredVaults.length === 0 && (searchQuery || statusFilter !== 'all') && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-12 sm:py-16"
+          >
+            <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 rounded-full bg-slate-800/50 flex items-center justify-center">
+              <Search className="w-10 h-10 sm:w-12 sm:h-12 text-slate-400" />
+            </div>
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">No Vaults Found</h3>
+            <p className="text-sm sm:text-base text-slate-400 mb-6 px-4">
+              {searchQuery 
+                ? `No vaults match "${searchQuery}"`
+                : 'No vaults found for the selected filter'
+              }
+            </p>
+            <Button
+              onClick={() => {
+                setSearchQuery('');
+                setStatusFilter('all');
+              }}
+              variant="outline"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+            >
+              Clear Filters
+            </Button>
+          </motion.div>
         )}
 
         {/* Create Vault Dialog */}

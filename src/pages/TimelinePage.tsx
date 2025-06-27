@@ -120,7 +120,7 @@ export function TimelinePage() {
 
   return (
     <div className="w-full min-h-screen">
-      <div className="px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-8">
+      <div className="px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-8 lg:mt-0 mt-16">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -153,7 +153,7 @@ export function TimelinePage() {
           className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:space-x-4"
         >
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
               placeholder="Search timeline..."
               value={searchQuery}

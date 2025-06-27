@@ -4,11 +4,10 @@ import {
   Users, 
   Mail, 
   Phone, 
-  Crown, 
-  Briefcase, 
-  UserCheck, 
   Heart, 
   Home,
+  Briefcase,
+  UserPlus,
   Plus,
   CheckCircle,
   X
@@ -33,39 +32,32 @@ interface AddContactDialogProps {
 
 const contactRoles = [
   {
-    id: 'next-of-kin',
-    name: 'Next of Kin',
-    description: 'Primary family member or spouse',
-    icon: Crown,
-    color: 'amber'
-  },
-  {
-    id: 'executor',
-    name: 'Executor',
-    description: 'Legal executor of your estate',
-    icon: Briefcase,
-    color: 'blue'
-  },
-  {
-    id: 'witness',
-    name: 'Witness',
-    description: 'Trusted witness for verification',
-    icon: UserCheck,
-    color: 'green'
-  },
-  {
     id: 'family',
-    name: 'Family Member',
-    description: 'Close family member',
+    name: 'Family',
+    description: 'Spouse, children, parents, siblings',
     icon: Home,
-    color: 'purple'
+    color: 'blue'
   },
   {
     id: 'friend',
     name: 'Friend',
-    description: 'Trusted friend',
+    description: 'Close personal friend',
     icon: Heart,
     color: 'pink'
+  },
+  {
+    id: 'colleague',
+    name: 'Colleague',
+    description: 'Work colleague or professional contact',
+    icon: Briefcase,
+    color: 'purple'
+  },
+  {
+    id: 'other',
+    name: 'Other',
+    description: 'Other trusted person',
+    icon: Users,
+    color: 'slate'
   }
 ];
 
@@ -119,7 +111,7 @@ export function AddContactDialog({ open, onOpenChange }: AddContactDialogProps) 
         <DialogTitle className="sr-only">Add Trusted Contact</DialogTitle>
         
         <div className="p-6 sm:p-8 relative">
-          {/* Close Button - positioned absolutely */}
+          {/* Close Button */}
           <button
             onClick={() => onOpenChange(false)}
             className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200"
@@ -195,9 +187,9 @@ export function AddContactDialog({ open, onOpenChange }: AddContactDialogProps) 
                 </div>
               </div>
 
-              {/* Role Selection */}
+              {/* Relationship Selection */}
               <div>
-                <Label className="text-slate-300 mb-4 block">Contact Role</Label>
+                <Label className="text-slate-300 mb-4 block">Relationship</Label>
                 <RadioGroup value={role} onValueChange={setRole} className="space-y-3">
                   {contactRoles.map((roleOption) => (
                     <motion.div

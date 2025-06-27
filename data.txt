@@ -1,0 +1,61 @@
+===========
+    1
+===========
+Dashboard Restructure Prompts - Digital Legacy Application
+1. Main Dashboard (Home) Page Prompt
+Create a clean, welcoming dashboard for a digital legacy preservation app with these specifications:
+Header: Welcome message with user's name and tagline "Your memories are secure and your legacy is being preserved"
+Remove:
+
+Deadman switch progress bar and terminology completely
+"Delivered Vaults" card (user would be deceased when delivery happens)
+Time remaining percentage display
+Any mention of vault delivery or auto-delivery status
+
+Replace with:
+
+Account Activity Status: Simple reminder like "Stay active to keep your account secure" with a "Check In Now" button (focus on account security rather than delivery)
+Summary Cards (4 cards in a grid):
+
+Active Vaults (vaults with content)
+Empty Vaults (created but no content yet)
+Trusted Contacts (total contacts)
+Recent Activity (last action taken)
+
+Quick Actions section with:
+
+Create New Vault
+Add Trusted Contact
+Account Settings
+View All Activity
+
+Recent Activity feed showing last 4-5 actions taken
+Use a consistent design, clean typography, and intuitive icons. Make it feel welcoming rather than morbid.
+
+
+
+===========
+    2
+===========
+Redesign the vaults page for a digital legacy app with these improvements:
+Page Header: "Your Vaults" with subtitle "Secure digital storage for your most precious memories and important information"
+Vault Cards: Each vault should display:
+
+Vault name and description
+Content summary (X text entries, X media files)
+Assigned contacts (show avatars/initials)
+Status indicator (Active/Empty)
+Single action button: "Open Vault"
+
+Filter Options: All, Active Vaults, Empty Vaults, Recently Updated
+Create Vault button prominently displayed
+When "Open Vault" is clicked: Navigate to a WhatsApp-like chat interface with:
+
+Two tabs: "Messages" and "Media"
+Messages tab: Text entries displayed as chat bubbles with timestamps
+Media tab: Grid view of photos, videos, documents with voice recording button
+Add content options: Text message, upload file, record voice note
+Vault settings: Edit vault details, manage assigned contacts
+
+Remove the "View" and "Add" buttons from vault cards - consolidate into single "Open" action.
+Use a consistent design, clean typography and modern design patterns, and intuitive icons. Make it feel welcoming

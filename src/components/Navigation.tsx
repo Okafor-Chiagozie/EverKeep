@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Shield, 
@@ -14,7 +14,6 @@ import {
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 
 const navItems = [
   { to: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -24,24 +23,42 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
-export function Navigation() {
+export default function Navigation() {
   const { logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleCreateVault = () => {
+    navigate('/vaults');
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 left-4 z-[60]">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="bg-slate-900/95 backdrop-blur-xl border-slate-700/50 hover:bg-slate-800/95 text-slate-300 hover:text-white shadow-lg"
-        >
-          {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-        </Button>
+      {/* Mobile Header - Fixed position */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50">
+        <div className="flex items-center justify-between px-4 py-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="w-10 h-10 rounded-lg bg-slate-800/50 backdrop-blur-xl border-slate-700/50 hover:bg-slate-700/50 text-slate-300 hover:text-white p-0"
+          >
+            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </Button>
+          
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-lg font-bold text-white">EverKeep</span>
+          </div>
+        </div>
       </div>
+
+      {/* Mobile Content Spacer */}
+      <div className="lg:hidden h-16"></div>
 
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
@@ -49,7 +66,7 @@ export function Navigation() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[45]"
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-45"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -62,8 +79,8 @@ export function Navigation() {
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={`
-          fixed left-0 top-0 h-screen w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50] shadow-2xl
-          lg:translate-x-0 lg:static lg:z-auto lg:w-64 xl:w-72 2xl:w-80 lg:shadow-none lg:fixed lg:h-screen
+          fixed left-0 top-0 h-[100dvh] w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-50 shadow-2xl
+          lg:translate-x-0 lg:z-auto lg:w-64 xl:w-72 2xl:w-80 lg:shadow-none lg:relative lg:h-screen
           flex flex-col navigation-sidebar
         `}
       >
@@ -77,11 +94,20 @@ export function Navigation() {
               <h1 className="text-xl font-bold text-white truncate">EverKeep</h1>
               <p className="text-xs text-slate-400">Digital Vault</p>
             </div>
+            {/* Mobile close button in header */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="lg:hidden w-8 h-8 p-0 text-slate-400 hover:text-white hover:bg-slate-800/50"
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </div>
 
           <Button 
+            onClick={handleCreateVault}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-sm py-3 h-auto shadow-lg"
-            onClick={() => setIsMobileMenuOpen(false)}
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Vault
@@ -115,9 +141,7 @@ export function Navigation() {
         </div>
 
         {/* Footer Section */}
-        <div className="p-4 lg:p-6 border-t border-slate-700/50 flex-shrink-0">
-          <Separator className="bg-slate-700/50 mb-4" />
-
+        <div className="p-4 pb-8 lg:p-6 border-t border-slate-700/50 flex-shrink-0">
           {/* Sign Out Button */}
           <Button
             variant="ghost"
@@ -125,7 +149,7 @@ export function Navigation() {
               logout();
               setIsMobileMenuOpen(false);
             }}
-            className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800/50 py-3 h-auto"
+            className="w-full justify-start border-[1px] border-gray-700 text-slate-300 hover:text-white hover:bg-slate-800/50 py-3 h-auto"
           >
             <LogOut className="w-4 h-4 mr-3" />
             Sign Out

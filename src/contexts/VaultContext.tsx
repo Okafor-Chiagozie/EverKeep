@@ -11,7 +11,7 @@ export interface VaultFolder {
 
 export interface VaultEntry {
   id: string;
-  type: 'text' | 'file' | 'audio' | 'video';
+  type: 'text' | 'file' | 'audio' | 'video' | 'image';
   title: string;
   content: string;
   encrypted: boolean;
@@ -35,7 +35,8 @@ export interface Contact {
   id: string;
   name: string;
   email: string;
-  role: string;
+  phone?: string;
+  role: 'family' | 'friend' | 'colleague' | 'other';
   verified: boolean;
   vaultCount: number;
   addedAt: Date;
@@ -61,91 +62,135 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   const vaultService = new VaultService(getSupabaseClient());
 
   useEffect(() => {
-    fetchVaults();
-  }, []);
-
-  const fetchVaults = async () => {
-    try {
-      const { data, error } = await vaultService.getVaults();
-      if (error) throw error;
-      
-      // Transform Supabase vault data to match our Vault interface
-      const transformedVaults: Vault[] = (data || []).map(vault => ({
-        id: vault.id,
-        name: vault.name,
-        description: vault.description || '',
-        status: 'active',
-        recipients: [],
-        folders: [],
-        createdAt: new Date(vault.created_at),
-        lastModified: new Date(vault.updated_at)
-      }));
-      
-      setVaults(transformedVaults);
-    } catch (error) {
-      console.error('Error fetching vaults:', error);
-    }
-  };
-
-  const addVault = async (vaultData: Omit<Vault, 'id' | 'createdAt' | 'lastModified'>) => {
-    try {
-      const { data, error } = await vaultService.createVault(vaultData.name, vaultData.description);
-      if (error) throw error;
-
-      const newVault: Vault = {
-        ...vaultData,
-        id: data!.id,
-        createdAt: new Date(data!.created_at),
-        lastModified: new Date(data!.updated_at)
-      };
-      setVaults(prev => [...prev, newVault]);
-    } catch (error) {
-      console.error('Error creating vault:', error);
-      throw error;
-    }
-  };
-
-  const updateVault = async (id: string, updates: Partial<Vault>) => {
-    try {
-      const { data, error } = await vaultService.updateVault(id, {
-        name: updates.name,
-        description: updates.description
-      });
-      if (error) throw error;
-
-      setVaults(prev => prev.map(vault => 
-        vault.id === id 
-          ? { ...vault, ...updates, lastModified: new Date() }
-          : vault
-      ));
-    } catch (error) {
-      console.error('Error updating vault:', error);
-      throw error;
-    }
-  };
-
-  const deleteVault = async (id: string) => {
-    try {
-      const { error } = await vaultService.deleteVault(id);
-      if (error) throw error;
-      setVaults(prev => prev.filter(vault => vault.id !== id));
-    } catch (error) {
-      console.error('Error deleting vault:', error);
-      throw error;
-    }
-  };
-
-  // Keep contact management in localStorage for now
-  useEffect(() => {
+    // Load data from localStorage or API
+    const savedVaults = localStorage.getItem('everkeep_vaults');
     const savedContacts = localStorage.getItem('everkeep_contacts');
+    
+    if (savedVaults) {
+      const parsedVaults = JSON.parse(savedVaults);
+      // Convert date strings back to Date objects
+      const vaultsWithDates = parsedVaults.map((vault: any) => ({
+        ...vault,
+        createdAt: new Date(vault.createdAt),
+        lastModified: new Date(vault.lastModified),
+        deliveryDate: vault.deliveryDate ? new Date(vault.deliveryDate) : undefined,
+        folders: vault.folders.map((folder: any) => ({
+          ...folder,
+          entries: folder.entries.map((entry: any) => ({
+            ...entry,
+            timestamp: new Date(entry.timestamp)
+          }))
+        }))
+      }));
+      setVaults(vaultsWithDates);
+    } else {
+      // Sample data
+      const sampleVaults: Vault[] = [
+        {
+          id: '1',
+          name: 'Family Memories',
+          description: 'Photos, videos, and messages for my children',
+          status: 'active',
+          recipients: ['1', '2'],
+          folders: [
+            {
+              id: '1',
+              name: 'Letters',
+              icon: 'Mail',
+              entries: [
+                {
+                  id: '1',
+                  type: 'text',
+                  title: 'Letter to Sarah',
+                  content: 'My dearest daughter, if you are reading this...',
+                  encrypted: true,
+                  timestamp: new Date('2024-01-15')
+                }
+              ]
+            },
+            {
+              id: '2',
+              name: 'Photos',
+              icon: 'Image',
+              entries: []
+            }
+          ],
+          createdAt: new Date('2024-01-01'),
+          lastModified: new Date('2024-01-15')
+        }
+      ];
+      setVaults(sampleVaults);
+    }
+    
     if (savedContacts) {
-      setContacts(JSON.parse(savedContacts));
+      const parsedContacts = JSON.parse(savedContacts);
+      // Convert date strings back to Date objects
+      const contactsWithDates = parsedContacts.map((contact: any) => ({
+        ...contact,
+        addedAt: new Date(contact.addedAt)
+      }));
+      setContacts(contactsWithDates);
+    } else {
+      // Sample contacts
+      const sampleContacts: Contact[] = [
+        {
+          id: '1',
+          name: 'Sarah Johnson',
+          email: 'sarah@example.com',
+          role: 'family',
+          verified: true,
+          vaultCount: 2,
+          addedAt: new Date('2024-01-01')
+        },
+        {
+          id: '2',
+          name: 'Michael Chen',
+          email: 'michael@example.com',
+          role: 'friend',
+          verified: false,
+          vaultCount: 1,
+          addedAt: new Date('2024-01-05')
+        }
+      ];
+      setContacts(sampleContacts);
     }
   }, []);
 
   useEffect(() => {
     localStorage.setItem('everkeep_contacts', JSON.stringify(contacts));
   }, [contacts]);
+
+  const addVault = (vaultData: Omit<Vault, 'id' | 'createdAt' | 'lastModified'>) => {
+    const newVault: Vault = {
+      ...vaultData,
+      id: Math.random().toString(36),
+      createdAt: new Date(),
+      lastModified: new Date()
+    };
+    setVaults(prev => [...prev, newVault]);
+  };
+
+  const updateVault = (id: string, updates: Partial<Vault>) => {
+    setVaults(prev => prev.map(vault => 
+      vault.id === id 
+        ? { ...vault, ...updates, lastModified: new Date() }
+        : vault
+    ));
+    
+    // Update vault counts for contacts
+    if (updates.recipients) {
+      setContacts(prevContacts => 
+        prevContacts.map(contact => ({
+          ...contact,
+          vaultCount: vaults.filter(v => v.recipients.includes(contact.id)).length
+        }))
+      );
+    }
+  };
+
+  const deleteVault = (id: string) => {
+    setVaults(prev => prev.filter(vault => vault.id !== id));
+  };
 
   const addContact = (contactData: Omit<Contact, 'id' | 'addedAt'>) => {
     const newContact: Contact = {
@@ -164,6 +209,12 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
 
   const deleteContact = (id: string) => {
     setContacts(prev => prev.filter(contact => contact.id !== id));
+    // Remove contact from all vaults
+    setVaults(prev => prev.map(vault => ({
+      ...vault,
+      recipients: vault.recipients.filter(recipientId => recipientId !== id),
+      lastModified: new Date()
+    })));
   };
 
   const addVaultEntry = (vaultId: string, folderId: string, entryData: Omit<VaultEntry, 'id' | 'timestamp'>) => {

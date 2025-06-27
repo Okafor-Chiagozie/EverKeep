@@ -1,420 +1,678 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Shield, 
   ArrowLeft, 
-  Plus, 
   Settings, 
   Users,
-  Lock,
   FileText,
   Image,
   Video,
   Mic,
-  Calendar,
-  MessageSquare,
   Send,
   Paperclip,
-  Smile,
-  Menu,
-  X
+  X,
+  MessageSquare,
+  Play,
+  Download,
+  Lock,
+  Trash2,
+  UserPlus,
+  CheckCircle
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useVaults } from '@/contexts/VaultContext';
+import { VaultContactsDialog } from '@/components/VaultContactsDialog';
+import { DeleteVaultDialog } from '@/components/DeleteVaultDialog';
+
+// TypeScript interfaces
+interface VaultEntry {
+  id: string;
+  type: 'text' | 'image' | 'video' | 'audio';
+  title: string;
+  content: string;
+  timestamp: Date;
+  encrypted: boolean;
+  folderName?: string;
+}
 
 export function VaultDetailPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [newMessage, setNewMessage] = useState<string>('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [showContactsDialog, setShowContactsDialog] = useState<boolean>(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+  const [textareaHeight, setTextareaHeight] = useState<number>(40);
+  const [entries, setEntries] = useState<(VaultEntry & { folderName: string })[]>([]);
+  const [activeTab, setActiveTab] = useState<'messages' | 'media'>('messages');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mediaEndRef = useRef<HTMLDivElement>(null);
+
   const { vaults, contacts, addVaultEntry } = useVaults();
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [newEntryText, setNewEntryText] = useState('');
-  const [newEntryTitle, setNewEntryTitle] = useState('');
-  const [isComposing, setIsComposing] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
+  
   const vault = vaults.find(v => v.id === id);
-  const currentFolder = selectedFolder ? vault?.folders.find(f => f.id === selectedFolder) : null;
-
+  
   if (!vault) {
     return (
-      <div className="p-4 sm:p-8 text-center">
-        <h1 className="text-xl sm:text-2xl font-bold text-white mb-4">Vault Not Found</h1>
-        <Button onClick={() => navigate('/vaults')}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Vaults
-        </Button>
+      <div className="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">Vault Not Found</h2>
+          <p className="text-slate-400">The vault you're looking for doesn't exist.</p>
+        </div>
       </div>
     );
   }
 
-  const handleAddEntry = () => {
-    if (!selectedFolder || !newEntryText.trim() || !newEntryTitle.trim()) return;
+  // Auto-resize textarea
+  useEffect(() => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+         const minHeight = 40;
+         const maxHeight = 120;
+         
+         // Reset height to get accurate scrollHeight
+         textarea.style.height = 'auto';
+         
+         // Calculate new height based on content
+         const scrollHeight = textarea.scrollHeight;
+         const newHeight = Math.min(Math.max(scrollHeight + 4, minHeight), maxHeight);
+         // Add extra padding when scrollbar is present
+         const finalHeight = scrollHeight > maxHeight - 4 ? maxHeight : newHeight;
+         
+         // Set the calculated height
+         textarea.style.height = `${finalHeight}px`;
+         setTextareaHeight(finalHeight);
+      }
+  }, [newMessage]);
 
-    addVaultEntry(vault.id, selectedFolder, {
-      type: 'text',
-      title: newEntryTitle,
-      content: newEntryText,
-      encrypted: true
-    });
-
-    setNewEntryText('');
-    setNewEntryTitle('');
-    setIsComposing(false);
-  };
-
-  const getIcon = (iconName: string) => {
-    const icons: any = {
-      Mail: MessageSquare,
-      Image: Image,
-      Video: Video,
-      Mic: Mic,
-      FileText: FileText,
-      Key: Lock
+  // Auto-scroll to bottom when entries change
+  useEffect(() => {
+    const scrollToBottom = () => {
+      if (activeTab === 'messages' && messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'end'
+        });
+      } else if (activeTab === 'media' && mediaEndRef.current) {
+        mediaEndRef.current.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'end'
+        });
+      }
     };
-    return icons[iconName] || FileText;
-  };
+
+    // Small delay to ensure DOM has updated
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [entries, activeTab]);
+
+  // Also scroll when switching tabs if there are entries
+  useEffect(() => {
+    if (entries.length > 0) {
+      const scrollToBottom = () => {
+        if (activeTab === 'messages' && messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'end'
+          });
+        } else if (activeTab === 'media' && mediaEndRef.current) {
+          mediaEndRef.current.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'end'
+          });
+        }
+      };
+
+      const timeoutId = setTimeout(scrollToBottom, 150);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [activeTab]);
+
+  const textEntries = entries.filter(entry => entry.type === 'text');
+  const mediaEntries = entries.filter(entry => entry.type !== 'text');
 
   const recipients = vault.recipients
     .map(recipientId => contacts.find(c => c.id === recipientId))
-    .filter(Boolean);
+    .filter((contact): contact is NonNullable<typeof contact> => contact !== undefined);
+
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || !vault) return;
+    
+    const newEntry: VaultEntry & { folderName: string } = {
+      id: Date.now().toString(),
+      type: 'text',
+      title: newMessage.split('\n')[0].substring(0, 50) + (newMessage.length > 50 ? '...' : ''),
+      content: newMessage,
+      timestamp: new Date(),
+      encrypted: true,
+      folderName: 'Messages'
+    };
+
+    setEntries(prev => [...prev, newEntry]);
+    
+    // Add to vault context
+    addVaultEntry(vault.id, 'messages', {
+      type: 'text',
+      title: newEntry.title,
+      content: newMessage,
+      encrypted: true
+    });
+    
+    setNewMessage('');
+  };
+
+  const handleDeleteMessage = (messageId: string) => {
+    setEntries(prev => prev.filter(entry => entry.id !== messageId));
+  };
+
+  const handleDeleteMedia = (mediaId: string) => {
+    setEntries(prev => prev.filter(entry => entry.id !== mediaId));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const isMobile = 'ontouchstart' in window;
+    
+    if (e.key === 'Enter') {
+      if (isMobile) {
+        if (!e.shiftKey) {
+          e.preventDefault();
+          handleSendMessage();
+        }
+      } else {
+        if (!e.shiftKey) {
+          e.preventDefault();
+          handleSendMessage();
+        }
+      }
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || !vault) return;
+
+    Array.from(files).forEach(file => {
+      const fileType = file.type.startsWith('image/') ? 'image' :
+                      file.type.startsWith('video/') ? 'video' :
+                      file.type.startsWith('audio/') ? 'audio' : 'text';
+
+      const newEntry: VaultEntry & { folderName: string } = {
+        id: Date.now().toString() + Math.random(),
+        type: fileType as 'text' | 'image' | 'video' | 'audio',
+        title: file.name,
+        content: file.name,
+        timestamp: new Date(),
+        encrypted: true,
+        folderName: 'Media'
+      };
+
+      setEntries(prev => [...prev, newEntry]);
+      
+      // Add to vault context
+      addVaultEntry(vault.id, 'media', {
+        type: fileType as 'text' | 'image' | 'video' | 'audio',
+        title: file.name,
+        content: file.name,
+        encrypted: true
+      });
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const formatTime = (timestamp: Date): string => {
+    const now = new Date();
+    const messageDate = new Date(timestamp);
+    const diffInDays = Math.floor((now.getTime() - messageDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) {
+      return messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInDays === 1) {
+      return 'Yesterday';
+    } else if (diffInDays < 7) {
+      return messageDate.toLocaleDateString([], { weekday: 'short' });
+    } else {
+      return messageDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
+  const getMediaIcon = (type: string) => {
+    switch (type) {
+      case 'image': return Image;
+      case 'video': return Video;
+      case 'audio': return Mic;
+      default: return FileText;
+    }
+  };
+
+  const getContactColor = (index: number) => {
+    const colors = [
+      'from-blue-500 to-blue-600',
+      'from-purple-500 to-purple-600',
+      'from-pink-500 to-pink-600',
+      'from-green-500 to-green-600',
+      'from-amber-500 to-amber-600',
+      'from-red-500 to-red-600',
+      'from-indigo-500 to-indigo-600',
+      'from-teal-500 to-teal-600'
+    ];
+    return colors[index % colors.length];
+  };
+
+  const handleVaultDeleted = () => {
+    navigate('/vaults');
+  };
 
   return (
-    <div className="flex h-screen w-full">
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 right-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="bg-slate-900/90 backdrop-blur-xl border-slate-700/50"
-        >
-          {isSidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-        </Button>
-      </div>
+    <div className="h-screen max-lg:h-[calc(100dvh-4rem)] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex overflow-hidden max-lg:mt-16">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*,video/*,audio/*"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
 
       {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45]"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* Sidebar - Folders */}
-      <motion.div
-        initial={{ x: -300 }}
-        animate={{ 
-          x: isSidebarOpen ? 0 : -300 
-        }}
-        className={`
-          fixed left-0 top-0 h-screen w-80 sm:w-96 bg-slate-900/50 backdrop-blur-sm border-r border-slate-700/50 z-50
-          lg:translate-x-0 lg:static lg:z-auto lg:w-80 xl:w-96
-          transition-transform duration-300 ease-in-out flex flex-col
-        `}
-      >
-        {/* Vault Header */}
-        <div className="p-3 sm:p-4 lg:p-6 border-b border-slate-700/50">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/vaults')}
-            className="mb-4 text-slate-400 hover:text-white"
+      {/* Vault Info Sidebar */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ x: -320 }}
+            animate={{ x: 0 }}
+            exit={{ x: -320 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed left-0 top-0 h-full w-80 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50] shadow-2xl flex flex-col"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Vaults
-          </Button>
+            {/* Vault Header */}
+            <div className="p-6 border-b border-slate-700/50 flex-shrink-0">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white">Vault Details</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
 
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-500/30 flex-shrink-0">
-              <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-500/30 flex-shrink-0">
+                  <Shield className="w-6 h-6 text-blue-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl font-bold text-white truncate">{vault.name}</h1>
+                  <p className="text-sm text-slate-400 line-clamp-2">{vault.description}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 mb-4 flex-wrap gap-2">
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                  <Lock className="w-3 h-3 mr-1" />
+                  Encrypted
+                </Badge>
+                <Badge className="border-slate-600 text-slate-300 text-xs border bg-transparent">
+                  <Users className="w-3 h-3 mr-1" />
+                  {recipients.length} recipients
+                </Badge>
+              </div>
+
+              <div className="text-xs text-slate-400">
+                Last modified: {new Date(vault.lastModified).toLocaleDateString()}
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl font-bold text-white truncate">{vault.name}</h1>
-              <p className="text-xs sm:text-sm text-slate-400 line-clamp-2">{vault.description}</p>
+
+            {/* Recipients */}
+            <div className="flex-1 p-6 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-slate-700/50 [&::-webkit-scrollbar-track]:my-2 [&::-webkit-scrollbar-thumb]:bg-slate-500 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-slate-400">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-medium text-slate-300">Recipients</h3>
+                <Button
+                  onClick={() => setShowContactsDialog(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                >
+                  <UserPlus className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-3">
+                {recipients.length > 0 ? (
+                  recipients.map((recipient, index) => (
+                    <div key={recipient.id} className="flex items-center space-x-3 p-3 rounded-lg bg-slate-800/30">
+                      <Avatar className={`w-8 h-8 bg-gradient-to-r ${getContactColor(index)} flex-shrink-0`}>
+                        <AvatarFallback className="text-white font-semibold text-xs">
+                          {recipient.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{recipient.name}</p>
+                        <p className="text-xs text-slate-400 truncate">{recipient.email}</p>
+                      </div>
+                      {recipient.verified && (
+                        <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6">
+                    <Users className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                    <p className="text-sm text-slate-400 mb-3">No recipients assigned</p>
+                    <Button
+                      onClick={() => setShowContactsDialog(true)}
+                      variant="outline"
+                      size="sm"
+                      className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Add Recipients
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center space-x-2 mb-4 flex-wrap gap-2">
-            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-              <Lock className="w-3 h-3 mr-1" />
-              {vault.status}
-            </Badge>
-            <Badge variant="outline" className="border-slate-600 text-slate-300 text-xs">
-              <Users className="w-3 h-3 mr-1" />
-              {recipients.length} recipients
-            </Badge>
-          </div>
+            {/* Vault Settings */}
+            <div className="p-6 border-t border-slate-700/50 flex-shrink-0 space-y-3">
+              <Button
+                variant="outline"
+                className="w-full border-slate-600 text-slate-300 hover:bg-slate-800"
+                onClick={() => setShowContactsDialog(true)}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Manage Recipients
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full border-red-500/50 text-red-400 hover:bg-red-900/20 hover:border-red-400"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Vault
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          <div className="text-xs text-slate-400">
-            Last modified: {new Date(vault.lastModified).toLocaleDateString()}
-          </div>
-        </div>
-
-        {/* Folders List */}
-        <div className="flex-1 p-3 sm:p-4 space-y-2 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-slate-300">Folders</h3>
-            <Button size="sm" variant="ghost" className="p-1">
-              <Plus className="w-4 h-4" />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-full">
+        {/* Chat Header */}
+        <div className="p-4 border-b border-slate-700/50 bg-slate-800/30 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 min-w-0 flex-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/vaults')}
+                className="text-slate-400 hover:text-white mr-2 max-sm:hidden"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-500/30 flex-shrink-0">
+                <Shield className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg font-semibold text-white truncate">{vault.name}</h2>
+                <p className="text-sm text-slate-400">
+                  {entries.length} total entries • {recipients.length} recipients
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSidebarOpen(true)}
+              className="text-slate-400 hover:text-white"
+            >
+              <Settings className="w-5 h-5" />
             </Button>
           </div>
+        </div>
 
-          {vault.folders.map((folder) => {
-            const IconComponent = getIcon(folder.icon);
-            const isSelected = selectedFolder === folder.id;
-            
-            return (
-              <motion.button
-                key={folder.id}
-                onClick={() => {
-                  setSelectedFolder(folder.id);
-                  setIsSidebarOpen(false);
-                }}
-                whileHover={{ x: 4 }}
-                className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all ${
-                  isSelected 
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' 
-                    : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
+        {/* Tabs Container - Full height with proper spacing */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Tab Navigation */}
+          <div className="px-4 py-2 border-b border-slate-700/50 bg-slate-800/20 flex-shrink-0">
+            <div className="grid w-full grid-cols-2 bg-slate-800/50 rounded-lg p-1">
+              <button
+                onClick={() => setActiveTab('messages')}
+                className={`py-3 text-sm rounded-md transition-all flex items-center justify-center ${
+                  activeTab === 'messages' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                 }`}
               >
-                <IconComponent className="w-5 h-5 flex-shrink-0" />
-                <div className="flex-1 text-left min-w-0">
-                  <div className="font-medium truncate">{folder.name}</div>
-                  <div className="text-xs opacity-70">
-                    {folder.entries.length} entries
-                  </div>
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
-
-        {/* Recipients */}
-        <div className="p-3 sm:p-4 border-t border-slate-700/50">
-          <h3 className="font-medium text-slate-300 mb-3">Recipients</h3>
-          <div className="space-y-2">
-            {recipients.map((recipient, index) => (
-              <div key={index} className="flex items-center space-x-2 text-sm">
-                <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs text-white">
-                    {recipient?.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <span className="text-slate-300 truncate">{recipient?.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {!selectedFolder ? (
-          /* Welcome State */
-          <div className="flex-1 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center max-w-md"
-            >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 rounded-full bg-slate-800/50 flex items-center justify-center">
-                <Shield className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">
-                Welcome to {vault.name}
-              </h2>
-              <p className="text-sm sm:text-base text-slate-400 mb-8">
-                Select a folder from the sidebar to view or add entries to your vault.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <Button
-                  onClick={() => {
-                    setSelectedFolder(vault.folders[0]?.id);
-                    setIsSidebarOpen(false);
-                  }}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Start Adding Memories
-                </Button>
-                <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Vault Settings
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        ) : (
-          /* Folder Content */
-          <>
-            {/* Folder Header */}
-            <div className="p-3 sm:p-4 lg:p-6 border-b border-slate-700/50 bg-slate-900/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3 min-w-0 flex-1">
-                  {(() => {
-                    const IconComponent = getIcon(currentFolder?.icon || '');
-                    return <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 flex-shrink-0" />;
-                  })()}
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-lg sm:text-xl font-bold text-white truncate">{currentFolder?.name}</h2>
-                    <p className="text-xs sm:text-sm text-slate-400">
-                      {currentFolder?.entries.length || 0} entries in this folder
-                    </p>
-                  </div>
-                </div>
-                
-                <Button
-                  onClick={() => setIsComposing(true)}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex-shrink-0"
-                  size="sm"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Add Entry</span>
-                  <span className="sm:hidden">Add</span>
-                </Button>
-              </div>
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Messages
+                <span className="ml-1">({textEntries.length})</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('media')}
+                className={`py-3 text-sm rounded-md transition-all flex items-center justify-center ${
+                  activeTab === 'media' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <Image className="w-4 h-4 mr-2" />
+                Media
+                <span className="ml-1">({mediaEntries.length})</span>
+              </button>
             </div>
+          </div>
 
-            {/* Entries List */}
-            <div className="flex-1 overflow-y-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
-              <AnimatePresence>
-                {/* Compose New Entry */}
-                {isComposing && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                  >
-                    <Card className="p-4 sm:p-6 bg-slate-800/30 border-slate-700/50">
-                      <div className="space-y-4">
-                        <Input
-                          placeholder="Entry title..."
-                          value={newEntryTitle}
-                          onChange={(e) => setNewEntryTitle(e.target.value)}
-                          className="bg-slate-900/50 border-slate-600 text-white"
-                        />
-                        <Textarea
-                          placeholder="Write your message, memory, or note here..."
-                          value={newEntryText}
-                          onChange={(e) => setNewEntryText(e.target.value)}
-                          className="bg-slate-900/50 border-slate-600 text-white min-h-[120px]"
-                        />
-                        <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                              <Paperclip className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                              <Smile className="w-4 h-4" />
-                            </Button>
-                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-                              <Lock className="w-3 h-3 mr-1" />
-                              Encrypted
-                            </Badge>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="ghost"
-                              onClick={() => setIsComposing(false)}
-                              className="text-slate-400 hover:text-white"
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              onClick={handleAddEntry}
-                              disabled={!newEntryText.trim() || !newEntryTitle.trim()}
-                              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                            >
-                              <Send className="w-4 h-4 mr-2" />
-                              Add Entry
-                            </Button>
-                          </div>
-                        </div>
+          {/* Tab Content - This is the key fix */}
+          <div className="flex-1 flex flex-col min-h-0 ">
+            {/* Messages Tab */}
+            {activeTab === 'messages' && (
+              <>
+                {/* Messages Area - Scrollable middle content */}
+                <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-slate-700/50 [&::-webkit-scrollbar-track]:my-2 [&::-webkit-scrollbar-thumb]:bg-slate-500 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-slate-400">
+                  {textEntries.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <MessageSquare className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-white mb-2">No messages yet</h3>
+                        <p className="text-base text-slate-400 px-4">Start preserving your thoughts and memories</p>
                       </div>
-                    </Card>
-                  </motion.div>
-                )}
-
-                {/* Existing Entries */}
-                {currentFolder?.entries.map((entry, index) => (
-                  <motion.div
-                    key={entry.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Card className="p-4 sm:p-6 bg-slate-900/30 border-slate-700/50 hover:border-slate-600/50 transition-colors">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-3 min-w-0 flex-1">
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-white truncate text-sm sm:text-base">{entry.title}</h3>
-                            <div className="flex items-center space-x-2 text-xs sm:text-sm text-slate-400 flex-wrap">
-                              <Calendar className="w-3 h-3" />
-                              <span>{new Date(entry.timestamp).toLocaleDateString()}</span>
-                              {entry.encrypted && (
-                                <>
-                                  <Separator orientation="vertical" className="h-3" />
-                                  <Lock className="w-3 h-3 text-green-400" />
-                                  <span className="text-green-400">Encrypted</span>
-                                </>
-                              )}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {textEntries.map((entry, index) => (
+                        <motion.div
+                          key={entry.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                          transition={{ delay: index * 0.1 }}
+                          className="flex justify-end group"
+                        >
+                          <div className="max-w-[80%] bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl rounded-tr-md p-4">
+                            <div className="text-white">
+                              <p className="text-base whitespace-pre-wrap leading-relaxed [word-break:break-all]">{entry.content}</p>
+                            </div>
+                            <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/20">
+                              <span className="text-xs text-blue-100">{formatTime(entry.timestamp)}</span>
+                              <button
+                                onClick={() => handleDeleteMessage(entry.id)}
+                                className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 p-1 bg-transparent hover:bg-white/10 rounded"
+                                title="Delete message"
+                              >
+                                <Trash2 className="w-3 h-3 text-blue-100 hover:text-red-300" />
+                              </button>
                             </div>
                           </div>
-                        </div>
-                        <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white flex-shrink-0">
-                          <Settings className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      
-                      <div className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                        {entry.content}
-                      </div>
-                    </Card>
-                  </motion.div>
-                ))}
-
-                {/* Empty State */}
-                {(!currentFolder?.entries || currentFolder.entries.length === 0) && !isComposing && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-12 sm:py-16"
-                  >
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-slate-800/50 flex items-center justify-center">
-                      {(() => {
-                        const IconComponent = getIcon(currentFolder?.icon || '');
-                        return <IconComponent className="w-6 h-6 sm:w-8 sm:h-8 text-slate-400" />;
-                      })()}
+                        </motion.div>
+                      ))}
+                      {/* Invisible element to scroll to */}
+                      <div ref={messagesEndRef} />
                     </div>
-                    <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
-                      No entries in {currentFolder?.name} yet
-                    </h3>
-                    <p className="text-sm sm:text-base text-slate-400 mb-6 px-4">
-                      Start preserving your memories by adding your first entry.
-                    </p>
+                  )}
+                </div>
+
+                {/* Message Input - Fixed at bottom */}
+                <div className="p-4 bg-slate-800/20 flex-shrink-0">
+                  <div className="flex items-end space-x-3">
+                    <div className="flex-1">
+                      <textarea
+                        ref={textareaRef}
+                        placeholder="Write a message..."
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-slate-700/50 [&::-webkit-scrollbar-track]:my-2 [&::-webkit-scrollbar-thumb]:bg-slate-500 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-slate-400"
+                        style={{
+                          height: `${textareaHeight}px`,
+                           minHeight: '40px',
+                           maxHeight: '120px',
+                           overflowY: textareaHeight >= 120 ? 'auto' : 'hidden'
+                        }}
+                        rows={1}
+                      />
+                    </div>
                     <Button
-                      onClick={() => setIsComposing(true)}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      onClick={handleSendMessage}
+                      disabled={!newMessage.trim()}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-[40px] py-6 mb-[0.3rem]"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add First Entry
+                      <Send className="w-4 h-4" />
                     </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </>
-        )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Media Tab */}
+            {activeTab === 'media' && (
+              <>
+                <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-slate-700/50 [&::-webkit-scrollbar-track]:my-2 [&::-webkit-scrollbar-thumb]:bg-slate-500 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-slate-400">
+                  {mediaEntries.length === 0 ? (
+                    <div className="flex items-center justify-center h-full ">
+                      <div className="text-center">
+                        <Image className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-white mb-2">No media files yet</h3>
+                        <p className="text-base text-slate-400 mb-6 px-4">Upload photos, videos, and audio recordings</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 ">
+                      {mediaEntries.map((entry, index) => {
+                        const IconComponent = getMediaIcon(entry.type);
+                        return (
+                          <motion.div
+                            key={entry.id}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="group"
+                          >
+                            <Card className="p-4 bg-slate-800/30 border-slate-700/50 hover:border-slate-600/50 transition-all cursor-pointer relative">
+                              {/* Delete button for media */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteMedia(entry.id);
+                                }}
+                                className="absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 p-1 bg-red-500/80 hover:bg-red-500 rounded-full z-10"
+                                title="Delete media"
+                              >
+                                <Trash2 className="w-3 h-3 text-white" />
+                              </button>
+                              
+                              <div className="aspect-square bg-slate-700/50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-slate-600/50 transition-colors">
+                                <IconComponent className="w-8 h-8 text-slate-400" />
+                              </div>
+                              <h4 className="font-medium text-white text-sm truncate mb-1">{entry.title}</h4>
+                              <p className="text-xs text-slate-400">{formatTime(entry.timestamp)}</p>
+                              <div className="flex items-center justify-between mt-2">
+                                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
+                                  {entry.type}
+                                </Badge>
+                                <div className="flex space-x-1">
+                                  {entry.type === 'video' && (
+                                    <Button variant="ghost" size="sm" className="p-1 h-auto">
+                                      <Play className="w-3 h-3" />
+                                    </Button>
+                                  )}
+                                  <Button variant="ghost" size="sm" className="p-1 h-auto">
+                                    <Download className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </Card>
+                          </motion.div>
+                        );
+                      })}
+                      {/* Invisible element to scroll to */}
+                      <div ref={mediaEndRef} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Media Upload Area - Fixed at bottom */}
+                <div className="p-4 bg-slate-800/20 flex-shrink-0">
+                  <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-3">
+                    <Button
+                      onClick={() => fileInputRef.current?.click()}
+                      variant="outline"
+                      className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-800"
+                    >
+                      <Paperclip className="w-4 h-4 mr-2" />
+                      Upload Files
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Vault Contacts Dialog */}
+      <VaultContactsDialog
+        open={showContactsDialog}
+        onOpenChange={setShowContactsDialog}
+        vaultId={vault.id}
+        vaultName={vault.name}
+      />
+
+      {/* Delete Vault Dialog */}
+      <DeleteVaultDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        vaultId={vault.id}
+        vaultName={vault.name}
+        onDeleted={handleVaultDeleted}
+      />
     </div>
   );
 }
