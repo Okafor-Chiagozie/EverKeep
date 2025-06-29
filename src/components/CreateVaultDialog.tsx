@@ -27,11 +27,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { useVaults } from '@/contexts/VaultContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { vaultService } from '@/services/vault';
+import { Vault } from '@/types/vault';
+import { Contact } from '@/types/contact';
 
 interface CreateVaultDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onVaultCreated: (vault: Vault) => void;
+  contacts: Contact[];
 }
 
 const vaultSteps = [
@@ -40,18 +45,19 @@ const vaultSteps = [
   { id: 3, title: 'Success', description: 'Your vault has been created' }
 ];
 
-export const CreateVaultDialog = ({ open, onOpenChange }: CreateVaultDialogProps) => {
+export const CreateVaultDialog = ({ open, onOpenChange, onVaultCreated, contacts }: CreateVaultDialogProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState('');
   
   // Form data
   const [vaultName, setVaultName] = useState('');
   const [vaultDescription, setVaultDescription] = useState('');
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   
-  const { addVault, contacts } = useVaults();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   // Filter contacts based on search
@@ -84,46 +90,67 @@ export const CreateVaultDialog = ({ open, onOpenChange }: CreateVaultDialogProps
   };
 
   const handleCreateVault = async () => {
+    if (!user || !vaultName.trim()) return;
+    
     setIsCreating(true);
+    setError('');
     
-    // Simulate vault creation
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const newVault = {
-      name: vaultName,
-      description: vaultDescription,
-      status: 'active' as const,
-      recipients: selectedContacts,
-      folders: [
-        {
-          id: 'messages',
-          name: 'Messages',
-          icon: 'Mail',
-          entries: []
-        },
-        {
-          id: 'photos',
-          name: 'Photos',
-          icon: 'Image',
-          entries: []
-        },
-        {
-          id: 'documents',
-          name: 'Documents',
-          icon: 'FileText',
-          entries: []
-        }
-      ]
-    };
-    
-    addVault(newVault);
-    setIsCreating(false);
-    setIsSuccess(true);
+    try {
+      // Step 1: Create the vault
+      const vaultResponse = await vaultService.createVault(user.id, {
+        name: vaultName.trim(),
+        description: vaultDescription.trim() || undefined
+      });
 
-    // Auto-close after showing success message
-    setTimeout(() => {
-      handleClose();
-    }, 2000);
+      if (!vaultResponse.isSuccessful || !vaultResponse.data) {
+        setError(vaultResponse.errors[0]?.description || 'Failed to create vault');
+        setIsCreating(false);
+        return;
+      }
+
+      const newVault = vaultResponse.data;
+
+      // Step 2: Add selected contacts as vault recipients
+      if (selectedContacts.length > 0) {
+        const recipientPromises = selectedContacts.map(contactId =>
+          vaultService.addVaultRecipient({
+            vault_id: newVault.id,
+            contact_id: contactId
+          })
+        );
+
+        // Wait for all recipients to be added
+        const recipientResults = await Promise.allSettled(recipientPromises);
+        
+        // Check if any failed (but don't fail the entire creation)
+        const failedRecipients = recipientResults.filter(result => 
+          result.status === 'rejected' || 
+          (result.status === 'fulfilled' && !result.value.isSuccessful)
+        );
+
+        if (failedRecipients.length > 0) {
+          console.warn(`${failedRecipients.length} contacts failed to be added to vault`);
+          // You could show a warning here, but vault creation was successful
+        }
+      }
+
+      // Step 3: Success!
+      setIsCreating(false);
+      setIsSuccess(true);
+      
+      // Notify parent component
+      onVaultCreated(newVault);
+
+      // Auto-close after showing success message
+      setTimeout(() => {
+        handleClose();
+      }, 2000);
+
+    } catch (err) {
+      console.error('Error creating vault:', err);
+      setError('Failed to create vault');
+      setIsCreating(false);
+    }
   };
 
   const handleContactToggle = (contactId: string) => {
@@ -142,6 +169,7 @@ export const CreateVaultDialog = ({ open, onOpenChange }: CreateVaultDialogProps
     setSelectedContacts([]);
     setSearchQuery('');
     setIsSuccess(false);
+    setError('');
     onOpenChange(false);
   };
 
@@ -153,7 +181,6 @@ export const CreateVaultDialog = ({ open, onOpenChange }: CreateVaultDialogProps
     }
   };
 
-  const progress = (currentStep / vaultSteps.length) * 100;
   const currentStepData = vaultSteps.find(step => step.id === currentStep)!;
 
   return (
@@ -191,6 +218,13 @@ export const CreateVaultDialog = ({ open, onOpenChange }: CreateVaultDialogProps
               </div>
             )}
           </DialogHeader>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+              <p className="text-red-300 text-sm">{error}</p>
+            </div>
+          )}
 
           <div className="py-6">
             <AnimatePresence mode="wait">
@@ -313,7 +347,7 @@ export const CreateVaultDialog = ({ open, onOpenChange }: CreateVaultDialogProps
                     <div className="space-y-4">
                       {/* Search */}
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input
                           placeholder="Search contacts..."
                           value={searchQuery}
@@ -329,7 +363,7 @@ export const CreateVaultDialog = ({ open, onOpenChange }: CreateVaultDialogProps
                             {selectedContacts.length} contact{selectedContacts.length !== 1 ? 's' : ''} selected
                           </span>
                           <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                            Can access vault
+                            Will have vault access
                           </Badge>
                         </div>
                       )}

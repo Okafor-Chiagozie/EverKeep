@@ -9,7 +9,8 @@ import {
   LogOut,
   Plus,
   Menu,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,6 +29,7 @@ export default function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleCreateVault = () => {
     navigate('/vaults');
@@ -145,14 +147,25 @@ export default function Navigation() {
           {/* Sign Out Button */}
           <Button
             variant="ghost"
-            onClick={() => {
-              logout();
-              setIsMobileMenuOpen(false);
+            onClick={async () => {
+               setIsSigningOut(true);
+               try {
+                  await logout();
+                  setIsMobileMenuOpen(false);
+               } catch (error) {
+                  console.error('Logout error:', error);
+                  setIsSigningOut(false);
+               }
             }}
-            className="w-full justify-start border-[1px] border-gray-700 text-slate-300 hover:text-white hover:bg-slate-800/50 py-3 h-auto"
-          >
-            <LogOut className="w-4 h-4 mr-3" />
-            Sign Out
+            disabled={isSigningOut}
+            className="w-full justify-start border-[1px] border-gray-700 text-slate-300 hover:text-white hover:bg-slate-800/50 py-3 h-auto disabled:opacity-70"
+            >
+            {isSigningOut ? (
+               <Loader2 className="w-4 h-4 mr-3 animate-spin" />
+            ) : (
+               <LogOut className="w-4 h-4 mr-3" />
+            )}
+            {isSigningOut ? 'Signing Out...' : 'Sign Out'}
           </Button>
         </div>
       </motion.nav>

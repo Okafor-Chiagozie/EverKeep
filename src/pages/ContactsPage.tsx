@@ -1,51 +1,117 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Users, 
   Plus, 
-  Search, 
-  Mail, 
-  Phone,
-  Shield,
-  MoreVertical,
+  Search,
   Heart,
   Home,
   Briefcase,
-  UserPlus,
-  Edit,
   Trash2,
-  CheckCircle,
-  X
+  X,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useVaults } from '@/contexts/VaultContext';
-import { AddContactDialog } from '@/components/AddContactDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { contactService } from '@/services/contact';
+import { vaultService } from '@/services/vault';
+import { Contact } from '@/types/contact';
+import { ContactCard } from '@/components/ContactCard';
+import { ContactDialog } from '@/components/ContactDialog';
 
 export function ContactsPage() {
+  const { user } = useAuth();
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showContactDialog, setShowContactDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [selectedContact, setSelectedContact] = useState<any>(null);
-  const [editForm, setEditForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    role: 'family'
-  });
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
-  const { contacts, updateContact, deleteContact } = useVaults();
+  const [vaultCounts, setVaultCounts] = useState<Record<string, number>>({});
+
+  // Fetch contacts on component mount
+  useEffect(() => {
+    const fetchContacts = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        const response = await contactService.getContacts({
+          pageSize: 100,
+          pageNumber: 1,
+          user_id: user.id
+        });
+
+        if (response.isSuccessful) {
+          setContacts(response.data);
+          // Fetch vault counts for each contact
+          await fetchVaultCounts(response.data);
+        } else {
+          setError(response.errors[0]?.description || 'Failed to fetch contacts');
+        }
+      } catch (err) {
+        console.error('Error fetching contacts:', err);
+        setError('Failed to fetch contacts');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContacts();
+  }, [user]);
+
+  // Fetch vault counts for contacts
+  const fetchVaultCounts = async (contactList: Contact[]) => {
+    try {
+      const counts: Record<string, number> = {};
+      
+      // For each contact, count how many vaults they're assigned to
+      for (const contact of contactList) {
+        try {
+          // Get all vaults for the user
+          const vaultsResponse = await vaultService.getVaults({
+            pageSize: 100,
+            pageNumber: 1,
+            user_id: user?.id
+          });
+          
+          if (vaultsResponse.isSuccessful) {
+            let contactVaultCount = 0;
+            
+            // For each vault, check if this contact is a recipient
+            for (const vault of vaultsResponse.data) {
+              const recipientsResponse = await vaultService.getVaultRecipients(vault.id);
+              if (recipientsResponse.isSuccessful) {
+                const isRecipient = recipientsResponse.data.some(
+                  recipient => recipient.contact_id === contact.id
+                );
+                if (isRecipient) {
+                  contactVaultCount++;
+                }
+              }
+            }
+            
+            counts[contact.id] = contactVaultCount;
+          } else {
+            counts[contact.id] = 0;
+          }
+        } catch {
+          counts[contact.id] = 0;
+        }
+      }
+      
+      setVaultCounts(counts);
+    } catch (err) {
+      console.error('Error fetching vault counts:', err);
+    }
+  };
 
   const filteredContacts = contacts.filter(contact => {
     const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,82 +120,32 @@ export function ContactsPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const getRelationshipIcon = (role: string) => {
-    switch (role) {
-      case 'family': return Home;
-      case 'friend': return Heart;
-      case 'colleague': return Briefcase;
-      default: return Users;
-    }
-  };
-
-  const getRelationshipColor = (role: string) => {
-    switch (role) {
-      case 'family': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'friend': return 'bg-pink-500/20 text-pink-400 border-pink-500/30';
-      case 'colleague': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
-    }
-  };
-
-  const getRelationshipLabel = (role: string) => {
-    switch (role) {
-      case 'family': return 'Family';
-      case 'friend': return 'Friend';
-      case 'colleague': return 'Colleague';
-      default: return 'Other';
-    }
-  };
-
-  const getAvatarColor = (index: number) => {
-    const colors = [
-      'from-blue-500 to-blue-600',
-      'from-purple-500 to-purple-600',
-      'from-pink-500 to-pink-600',
-      'from-green-500 to-green-600',
-      'from-amber-500 to-amber-600',
-      'from-red-500 to-red-600',
-      'from-indigo-500 to-indigo-600',
-      'from-teal-500 to-teal-600'
-    ];
-    return colors[index % colors.length];
-  };
-
-  const handleEditContact = (contact: any) => {
+  const handleEditContact = (contact: Contact) => {
     setSelectedContact(contact);
-    setEditForm({
-      name: contact.name,
-      email: contact.email,
-      phone: contact.phone || '',
-      role: contact.role
-    });
-    setShowEditDialog(true);
+    setShowContactDialog(true);
   };
 
-  const handleDeleteContact = (contact: any) => {
+  const handleAddContact = () => {
+    setSelectedContact(null);
+    setShowContactDialog(true);
+  };
+
+  const handleDeleteContact = (contact: Contact) => {
     setSelectedContact(contact);
     setShowDeleteDialog(true);
   };
 
-  const handleUpdateContact = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedContact) return;
-
-    setIsUpdating(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    updateContact(selectedContact.id, {
-      name: editForm.name.trim(),
-      email: editForm.email.trim(),
-      phone: editForm.phone.trim() || undefined,
-      role: editForm.role as any
-    });
-    
-    setIsUpdating(false);
-    setShowEditDialog(false);
-    setSelectedContact(null);
+  const handleContactSaved = (savedContact: Contact) => {
+    if (selectedContact) {
+      // Update existing contact
+      setContacts(prev => prev.map(contact => 
+        contact.id === savedContact.id ? savedContact : contact
+      ));
+    } else {
+      // Add new contact
+      setContacts(prev => [...prev, savedContact]);
+      setVaultCounts(prev => ({ ...prev, [savedContact.id]: 0 }));
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -137,14 +153,28 @@ export function ContactsPage() {
 
     setIsDeleting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    deleteContact(selectedContact.id);
-    
-    setIsDeleting(false);
-    setShowDeleteDialog(false);
-    setSelectedContact(null);
+    try {
+      const response = await contactService.deleteContact(selectedContact.id);
+      
+      if (response.isSuccessful) {
+        // Remove from local state
+        setContacts(prev => prev.filter(contact => contact.id !== selectedContact.id));
+        setVaultCounts(prev => {
+          const newCounts = { ...prev };
+          delete newCounts[selectedContact.id];
+          return newCounts;
+        });
+        setShowDeleteDialog(false);
+        setSelectedContact(null);
+      } else {
+        setError(response.errors[0]?.description || 'Failed to delete contact');
+      }
+    } catch (err) {
+      console.error('Error deleting contact:', err);
+      setError('Failed to delete contact');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Calculate stats
@@ -162,40 +192,39 @@ export function ContactsPage() {
     { id: 'other', name: 'Other', count: others }
   ];
 
-  const contactRoles = [
-    {
-      id: 'family',
-      name: 'Family',
-      description: 'Spouse, children, parents, siblings',
-      icon: Home,
-      color: 'blue'
-    },
-    {
-      id: 'friend',
-      name: 'Friend',
-      description: 'Close personal friend',
-      icon: Heart,
-      color: 'pink'
-    },
-    {
-      id: 'colleague',
-      name: 'Colleague',
-      description: 'Work colleague or professional contact',
-      icon: Briefcase,
-      color: 'purple'
-    },
-    {
-      id: 'other',
-      name: 'Other',
-      description: 'Other trusted person',
-      icon: Users,
-      color: 'slate'
-    }
-  ];
+  // Loading state
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-4" />
+          <p className="text-white">Loading contacts...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen">
       <div className="px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-8 lg:mt-0 mt-16">
+        {/* Error Message */}
+        {error && (
+          <Card className="p-3 bg-red-900/20 border-red-500/30">
+            <div className="flex items-center space-x-2 text-red-400">
+              <AlertCircle className="w-4 h-4" />
+              <p className="text-sm">{error}</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setError('')}
+                className="ml-auto text-red-400 hover:text-red-300"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -213,7 +242,7 @@ export function ContactsPage() {
           </div>
 
           <Button
-            onClick={() => setShowAddDialog(true)}
+            onClick={handleAddContact}
             className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex-shrink-0"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -322,7 +351,7 @@ export function ContactsPage() {
               Add trusted contacts who will receive your digital legacy when the time comes.
             </p>
             <Button
-              onClick={() => setShowAddDialog(true)}
+              onClick={handleAddContact}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -334,102 +363,16 @@ export function ContactsPage() {
         {/* Contacts Grid */}
         {filteredContacts.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {filteredContacts.map((contact, index) => {
-              const RelationshipIcon = getRelationshipIcon(contact.role);
-              
-              return (
-                <motion.div
-                  key={contact.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + index * 0.1 }}
-                  whileHover={{ y: -4 }}
-                  className="group"
-                >
-                  <Card className="p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 h-full">
-                    {/* Header with Avatar and Actions */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        <Avatar className={`w-12 h-12 bg-gradient-to-r ${getAvatarColor(index)} flex-shrink-0`}>
-                          <AvatarFallback className="text-white font-semibold">
-                            {contact.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-white text-base truncate">{contact.name}</h3>
-                          <Badge className={`${getRelationshipColor(contact.role)} border text-xs mt-1`}>
-                            <RelationshipIcon className="w-3 h-3 mr-1" />
-                            {getRelationshipLabel(contact.role)}
-                          </Badge>
-                        </div>
-                      </div>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="p-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex-shrink-0"
-                          >
-                            <MoreVertical className="w-4 h-4 text-slate-400" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
-                          <DropdownMenuItem 
-                            className="text-red-400 hover:bg-red-900/20"
-                            onClick={() => handleDeleteContact(contact)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete Contact
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-
-                    {/* Contact Information */}
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-center space-x-2 text-sm text-slate-400">
-                        <Mail className="w-4 h-4 flex-shrink-0" />
-                        <span className="truncate">{contact.email}</span>
-                      </div>
-                      {contact.phone && (
-                        <div className="flex items-center space-x-2 text-sm text-slate-400">
-                          <Phone className="w-4 h-4 flex-shrink-0" />
-                          <span>{contact.phone}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Vault Assignment Info */}
-                    <div className="flex items-center justify-between text-sm mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Shield className="w-4 h-4 text-blue-400" />
-                        <span className="text-slate-400">Assigned to:</span>
-                        <span className="font-medium text-white">{contact.vaultCount} vault{contact.vaultCount !== 1 ? 's' : ''}</span>
-                      </div>
-                      {contact.verified && (
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                      )}
-                    </div>
-
-                    {/* Action Button */}
-                    <Button
-                      variant="outline"
-                      className="w-full border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-                      onClick={() => handleEditContact(contact)}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Contact
-                    </Button>
-
-                    {/* Added Date */}
-                    <div className="text-xs text-slate-500 mt-3 text-center">
-                      Added {new Date(contact.addedAt).toLocaleDateString()}
-                    </div>
-                  </Card>
-                </motion.div>
-              );
-            })}
+            {filteredContacts.map((contact, index) => (
+              <ContactCard
+                key={contact.id}
+                contact={contact}
+                index={index}
+                vaultCount={vaultCounts[contact.id] || 0}
+                onEdit={handleEditContact}
+                onDelete={handleDeleteContact}
+              />
+            ))}
           </div>
         )}
 
@@ -463,143 +406,14 @@ export function ContactsPage() {
           </motion.div>
         )}
 
-        {/* Add Contact Dialog */}
-        <AddContactDialog
-          open={showAddDialog}
-          onOpenChange={setShowAddDialog}
+        {/* Contact Dialog (Add/Edit) */}
+        <ContactDialog
+          open={showContactDialog}
+          onOpenChange={setShowContactDialog}
+          contact={selectedContact}
+          onContactSaved={handleContactSaved}
+          onError={setError}
         />
-
-        {/* Edit Contact Dialog */}
-        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-2xl bg-slate-900/95 border-slate-700 mx-4 sm:mx-0">
-            <DialogTitle className="sr-only">Edit Contact</DialogTitle>
-            
-            <div className="p-6 sm:p-8 relative">
-              {/* Close Button */}
-              <button
-                onClick={() => setShowEditDialog(false)}
-                className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <DialogHeader className="pr-12">
-                <DialogTitle className="text-2xl text-white flex items-center space-x-3">
-                  <Edit className="w-6 h-6 text-blue-400" />
-                  <span>Edit Contact</span>
-                </DialogTitle>
-              </DialogHeader>
-
-              <form onSubmit={handleUpdateContact} className="space-y-6 mt-6">
-                {/* Basic Information */}
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="edit-name" className="text-slate-300">Full Name</Label>
-                    <Input
-                      id="edit-name"
-                      value={editForm.name}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                      required
-                      className="mt-2 bg-slate-800/50 border-slate-600 text-white"
-                      placeholder="Enter their full name"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="edit-email" className="text-slate-300">Email Address</Label>
-                    <Input
-                      id="edit-email"
-                      type="email"
-                      value={editForm.email}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                      required
-                      className="mt-2 bg-slate-800/50 border-slate-600 text-white"
-                      placeholder="Enter their email address"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="edit-phone" className="text-slate-300">Phone Number (Optional)</Label>
-                    <Input
-                      id="edit-phone"
-                      type="tel"
-                      value={editForm.phone}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                      className="mt-2 bg-slate-800/50 border-slate-600 text-white"
-                      placeholder="Enter their phone number"
-                    />
-                  </div>
-                </div>
-
-                {/* Relationship Selection */}
-                <div>
-                  <Label className="text-slate-300 mb-4 block">Relationship</Label>
-                  <RadioGroup 
-                    value={editForm.role} 
-                    onValueChange={(value) => setEditForm(prev => ({ ...prev, role: value }))} 
-                    className="space-y-3"
-                  >
-                    {contactRoles.map((roleOption) => (
-                      <motion.div
-                        key={roleOption.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Card
-                          className={`p-4 cursor-pointer transition-all border-2 ${
-                            editForm.role === roleOption.id
-                              ? `bg-${roleOption.color}-900/20 border-${roleOption.color}-500/50`
-                              : 'bg-slate-800/30 border-slate-700/50 hover:border-slate-600/50'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <RadioGroupItem value={roleOption.id} id={`edit-${roleOption.id}`} />
-                            <div className={`w-10 h-10 rounded-lg bg-${roleOption.color}-500/20 flex items-center justify-center`}>
-                              <roleOption.icon className={`w-5 h-5 text-${roleOption.color}-400`} />
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="font-medium text-white">{roleOption.name}</h4>
-                              <p className="text-sm text-slate-400">{roleOption.description}</p>
-                            </div>
-                          </div>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </RadioGroup>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-700/50">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setShowEditDialog(false)}
-                    className="text-slate-400 hover:text-white"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={!editForm.name.trim() || !editForm.email.trim() || isUpdating}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  >
-                    {isUpdating ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Updating...</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4" />
-                        <span>Update Contact</span>
-                      </div>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         {/* Delete Contact Dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -610,7 +424,8 @@ export function ContactsPage() {
               {/* Close Button */}
               <button
                 onClick={() => setShowDeleteDialog(false)}
-                className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200"
+                disabled={isDeleting}
+                className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200 disabled:opacity-50"
               >
                 <X className="w-4 h-4" />
               </button>

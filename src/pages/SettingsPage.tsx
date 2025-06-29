@@ -1,55 +1,193 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Settings, 
   User, 
-  Bell, 
+  Clock,
   CheckCircle,
-  Mail,
-  Phone,
-  Clock
+  AlertCircle,
+  X,
+  Loader2
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { userService } from '@/services/user';
+import { User as UserType } from '@/types/user';
 
 export function SettingsPage() {
-  const { user, updateUser } = useAuth();
+  const { user: authUser } = useAuth();
+  const [userProfile, setUserProfile] = useState<UserType | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState(user?.phone || '');
-  const [inactivityMonths, setInactivityMonths] = useState(Math.round((user?.deadmanTrigger || 60) / 30));
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: true,
-    checkin: true,
-    security: true
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    full_name: '',
+    phone: '',
+    inactivity_threshold_days: 60
   });
 
-  const handleNotificationChange = (type: string, value: boolean) => {
-    setNotifications(prev => ({ ...prev, [type]: value }));
+  // Track original values to detect changes
+  const [originalData, setOriginalData] = useState({
+    full_name: '',
+    phone: '',
+    inactivity_threshold_days: 60
+  });
+
+  // Load user profile on component mount
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!authUser?.id) return;
+      
+      try {
+        setIsLoading(true);
+        const response = await userService.getUserById(authUser.id);
+        
+        if (response.isSuccessful && response.data) {
+          setUserProfile(response.data);
+          const userData = {
+            full_name: response.data.full_name || '',
+            phone: response.data.phone || '',
+            inactivity_threshold_days: response.data.inactivity_threshold_days || 60
+          };
+          setFormData(userData);
+          setOriginalData(userData);
+        } else {
+          setError('Failed to load user profile');
+        }
+      } catch (err) {
+        console.error('Error loading user profile:', err);
+        setError('Failed to load user profile');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, [authUser?.id]);
+
+  const handleInputChange = (field: string, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveChanges = async () => {
-    setIsSaving(true);
-    
-    // Convert months to days for storage
-    const deadmanTriggerDays = inactivityMonths * 30;
-    
-    // Update user with new values
-    updateUser({ 
-      phone: phoneNumber,
-      deadmanTrigger: deadmanTriggerDays
-    });
-    
-    // Simulate saving
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSaving(false);
+  // Check if account info has changes
+  const hasAccountChanges = () => {
+    return formData.full_name !== originalData.full_name || 
+           formData.phone !== originalData.phone;
   };
+
+  // Check if inactivity settings have changes
+  const hasInactivityChanges = () => {
+    return formData.inactivity_threshold_days !== originalData.inactivity_threshold_days;
+  };
+
+  const handleSaveAccountInfo = async () => {
+    if (!authUser?.id || !userProfile || !hasAccountChanges()) return;
+    
+    setIsSaving(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const response = await userService.updateUser(authUser.id, {
+        full_name: formData.full_name.trim(),
+        phone: formData.phone.trim()
+      });
+
+      if (response.isSuccessful && response.data) {
+        setUserProfile(response.data);
+        const updatedData = {
+          ...originalData,
+          full_name: response.data.full_name || '',
+          phone: response.data.phone || ''
+        };
+        setOriginalData(updatedData);
+        setSuccess('Account information saved successfully!');
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(response.errors[0]?.description || 'Failed to save account information');
+      }
+    } catch (err) {
+      console.error('Error saving account info:', err);
+      setError('Failed to save account information');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveInactivitySettings = async () => {
+    if (!authUser?.id || !userProfile || !hasInactivityChanges()) return;
+    
+    setIsSaving(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const response = await userService.updateUser(authUser.id, {
+        inactivity_threshold_days: formData.inactivity_threshold_days
+      });
+
+      if (response.isSuccessful && response.data) {
+        setUserProfile(response.data);
+        const updatedData = {
+          ...originalData,
+          inactivity_threshold_days: response.data.inactivity_threshold_days || 60
+        };
+        setOriginalData(updatedData);
+        setSuccess('Inactivity settings saved successfully!');
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(response.errors[0]?.description || 'Failed to save inactivity settings');
+      }
+    } catch (err) {
+      console.error('Error saving inactivity settings:', err);
+      setError('Failed to save inactivity settings');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Convert days to months for display
+  const inactivityMonths = Math.round(formData.inactivity_threshold_days / 30);
+  
+  // Handle months input and convert to days
+  const handleMonthsChange = (months: number) => {
+    const days = Math.max(1, Math.min(365, months * 30)); // 1 day to 1 year max
+    handleInputChange('inactivity_threshold_days', days);
+  };
+
+  const clearMessage = () => {
+    setError('');
+    setSuccess('');
+  };
+
+  // Check email verification status from auth user
+  const isEmailVerified = () => {
+    return authUser?.user_metadata?.email_verified === true || 
+           authUser?.email_confirmed_at !== null;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-4" />
+          <p className="text-white">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen">
@@ -71,6 +209,52 @@ export function SettingsPage() {
           </div>
         </motion.div>
 
+        {/* Success Message */}
+        {success && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="p-3 bg-green-900/20 border-green-500/30">
+              <div className="flex items-center space-x-2 text-green-400">
+                <CheckCircle className="w-4 h-4" />
+                <p className="text-sm">{success}</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearMessage}
+                  className="ml-auto text-green-400 hover:text-green-300"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="p-3 bg-red-900/20 border-red-500/30">
+              <div className="flex items-center space-x-2 text-red-400">
+                <AlertCircle className="w-4 h-4" />
+                <p className="text-sm">{error}</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearMessage}
+                  className="ml-auto text-red-400 hover:text-red-300"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Account Information */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -78,20 +262,40 @@ export function SettingsPage() {
           transition={{ delay: 0.1 }}
         >
           <Card className="p-4 sm:p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50">
-            <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6 flex items-center space-x-2">
-              <User className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Account Information</span>
-            </h3>
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center space-x-2">
+                <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Account Information</span>
+              </h3>
+              <Button
+                onClick={handleSaveAccountInfo}
+                disabled={isSaving || !hasAccountChanges()}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2"
+              >
+                {isSaving ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="text-sm">Saving...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-3 h-3" />
+                    <span className="text-sm">Save</span>
+                  </div>
+                )}
+              </Button>
+            </div>
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name" className="text-slate-300">Full Name</Label>
+                  <Label htmlFor="full_name" className="text-slate-300">Full Name</Label>
                   <Input
-                    id="name"
-                    value={user?.name || ''}
-                    onChange={(e) => updateUser({ name: e.target.value })}
+                    id="full_name"
+                    value={formData.full_name}
+                    onChange={(e) => handleInputChange('full_name', e.target.value)}
                     className="mt-2 bg-slate-800/50 border-slate-600 text-white"
+                    placeholder="Enter your full name"
                   />
                 </div>
                 <div>
@@ -99,7 +303,7 @@ export function SettingsPage() {
                   <Input
                     id="email"
                     type="email"
-                    value={user?.email || ''}
+                    value={userProfile?.email || ''}
                     disabled
                     className="mt-2 bg-slate-800/30 border-slate-600 text-slate-400 cursor-not-allowed"
                   />
@@ -112,8 +316,8 @@ export function SettingsPage() {
                 <Input
                   id="phone"
                   type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="Enter your phone number"
                   className="mt-2 bg-slate-800/50 border-slate-600 text-white"
                 />
@@ -124,13 +328,36 @@ export function SettingsPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                 <div>
                   <h4 className="font-medium text-white">Account Status</h4>
-                  <p className="text-sm text-slate-400">Your account is active and verified</p>
+                  <p className="text-sm text-slate-400">
+                    Your account is {isEmailVerified() ? 'verified and active' : 'pending verification'}
+                  </p>
                 </div>
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 w-fit">
+                <Badge className={
+                  isEmailVerified() 
+                    ? "bg-green-500/20 text-green-400 border-green-500/30" 
+                    : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                }>
                   <CheckCircle className="w-3 h-3 mr-1" />
-                  Active
+                  {isEmailVerified() ? 'Verified' : 'Pending'}
                 </Badge>
               </div>
+
+              {userProfile && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                  <div>
+                    <p className="text-sm text-slate-400">Account Created</p>
+                    <p className="text-white font-medium">
+                      {new Date(userProfile.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-400">Last Login</p>
+                    <p className="text-white font-medium">
+                      {new Date(userProfile.last_login).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         </motion.div>
@@ -142,18 +369,37 @@ export function SettingsPage() {
           transition={{ delay: 0.2 }}
         >
           <Card className="p-4 sm:p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50">
-            <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6 flex items-center space-x-2">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Vault Delivery</span>
-            </h3>
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center space-x-2">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Vault Delivery Settings</span>
+              </h3>
+              <Button
+                onClick={handleSaveInactivitySettings}
+                disabled={isSaving || !hasInactivityChanges()}
+                className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2"
+              >
+                {isSaving ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="text-sm">Saving...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-3 h-3" />
+                    <span className="text-sm">Save</span>
+                  </div>
+                )}
+              </Button>
+            </div>
 
             <div className="space-y-4 sm:space-y-6">
               {/* Inactivity Period */}
               <div className="p-4 rounded-xl bg-amber-900/20 border border-amber-500/30">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
                   <div>
-                    <h4 className="font-medium text-white">Maximum Inactivity Period</h4>
-                    <p className="text-sm text-slate-400">Months of not logging in before vault delivery</p>
+                    <h4 className="font-medium text-white">Inactivity Threshold</h4>
+                    <p className="text-sm text-slate-400">How long before vault delivery is triggered</p>
                   </div>
                   <div className="text-center sm:text-right">
                     <p className="text-xl sm:text-2xl font-bold text-amber-400">{inactivityMonths}</p>
@@ -171,114 +417,47 @@ export function SettingsPage() {
                     min="1"
                     max="12"
                     value={inactivityMonths}
-                    onChange={(e) => setInactivityMonths(parseInt(e.target.value) || 1)}
+                    onChange={(e) => {
+                      const months = parseInt(e.target.value) || 1;
+                      handleMonthsChange(Math.max(1, Math.min(12, months)));
+                    }}
                     className="bg-slate-800/50 border-slate-600 text-white"
                   />
-                  <p className="text-xs text-slate-400">
-                    Your vault will be sent to recipients if you don't log in for this period
-                  </p>
+                  <div className="text-xs text-slate-400 space-y-1">
+                    <p>
+                      Your vault will be delivered to recipients if you don't log in for {formData.inactivity_threshold_days} days
+                    </p>
+                    <p className="text-amber-400">
+                      ⚠️ This setting affects all your vaults
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Settings Summary */}
+              <div className="p-4 rounded-xl bg-blue-900/20 border border-blue-500/30">
+                <h4 className="font-medium text-blue-300 mb-3">Current Settings Summary</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Inactivity threshold:</span>
+                    <span className="text-white">{formData.inactivity_threshold_days} days</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Last login:</span>
+                    <span className="text-white">
+                      {userProfile ? new Date(userProfile.last_login).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Days since last login:</span>
+                    <span className="text-white">
+                      {userProfile ? Math.floor((Date.now() - new Date(userProfile.last_login).getTime()) / (1000 * 60 * 60 * 24)) : 'N/A'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </Card>
-        </motion.div>
-
-        {/* Notifications */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="p-4 sm:p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50">
-            <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6 flex items-center space-x-2">
-              <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Notifications</span>
-            </h3>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
-                <div className="flex items-center space-x-3">
-                  <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-                  <div>
-                    <p className="font-medium text-white text-sm sm:text-base">Email Notifications</p>
-                    <p className="text-xs sm:text-sm text-slate-400">Receive updates via email</p>
-                  </div>
-                </div>
-                <Switch 
-                  checked={notifications.email}
-                  onCheckedChange={(value) => handleNotificationChange('email', value)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
-                <div className="flex items-center space-x-3">
-                  <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
-                  <div>
-                    <p className="font-medium text-white text-sm sm:text-base">Push Notifications</p>
-                    <p className="text-xs sm:text-sm text-slate-400">Browser and mobile notifications</p>
-                  </div>
-                </div>
-                <Switch 
-                  checked={notifications.push}
-                  onCheckedChange={(value) => handleNotificationChange('push', value)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
-                <div className="flex items-center space-x-3">
-                  <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
-                  <div>
-                    <p className="font-medium text-white text-sm sm:text-base">SMS Notifications</p>
-                    <p className="text-xs sm:text-sm text-slate-400">Text message alerts</p>
-                  </div>
-                </div>
-                <Switch 
-                  checked={notifications.checkin}
-                  onCheckedChange={(value) => handleNotificationChange('checkin', value)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
-                  <div>
-                    <p className="font-medium text-white text-sm sm:text-base">Security Alerts</p>
-                    <p className="text-xs sm:text-sm text-slate-400">Important security notifications</p>
-                  </div>
-                </div>
-                <Switch 
-                  checked={notifications.security}
-                  onCheckedChange={(value) => handleNotificationChange('security', value)}
-                />
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
-        {/* Save Changes Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="flex justify-end"
-        >
-          <Button
-            onClick={handleSaveChanges}
-            disabled={isSaving}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8"
-          >
-            {isSaving ? (
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Saving...</span>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>Save Changes</span>
-              </div>
-            )}
-          </Button>
         </motion.div>
 
         {/* Mobile bottom spacing */}

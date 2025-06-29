@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -6,67 +6,98 @@ import {
   Plus, 
   Search, 
   Users,
-  FileText,
-  Image,
-  Video,
-  Mic,
-  CheckCircle,
-  Archive,
-  Calendar
+  Calendar,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useVaults } from '@/contexts/VaultContext';
 import { CreateVaultDialog } from '@/components/CreateVaultDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { vaultService } from '@/services/vault';
+import { contactService } from '@/services/contact';
+import { Vault } from '@/types/vault';
+import { Contact } from '@/types/contact';
 
 export function VaultsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const { vaults, contacts } = useVaults();
+  const [vaults, setVaults] = useState<Vault[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  const getVaultStatus = (vault: any) => {
-    const hasContent = vault.folders.some((folder: any) => folder.entries.length > 0);
-    return hasContent ? 'active' : 'empty';
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch vaults and contacts simultaneously
+        const [vaultsResponse, contactsResponse] = await Promise.all([
+          vaultService.getVaults({
+            pageSize: 100,
+            pageNumber: 1,
+            user_id: user.id
+          }),
+          contactService.getContacts({
+            pageSize: 100,
+            pageNumber: 1,
+            user_id: user.id
+          })
+        ]);
+
+        if (vaultsResponse.isSuccessful) {
+          setVaults(vaultsResponse.data);
+        } else {
+          setError('Failed to load vaults');
+        }
+        
+        if (contactsResponse.isSuccessful) {
+          setContacts(contactsResponse.data);
+        }
+        
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load vault data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  const handleVaultCreated = (newVault: Vault) => {
+    setVaults(prev => [newVault, ...prev]);
+    navigate(`/vaults/${newVault.id}`);
   };
 
   const filteredVaults = vaults.filter(vault => {
     const matchesSearch = vault.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         vault.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const vaultStatus = getVaultStatus(vault);
+                         (vault.description && vault.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const vaultDate = new Date(vault.timestamp);
+    const isRecent = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) < vaultDate;
+    
     const matchesFilter = statusFilter === 'all' || 
-                         (statusFilter === 'active' && vaultStatus === 'active') ||
-                         (statusFilter === 'empty' && vaultStatus === 'empty') ||
-                         (statusFilter === 'recent' && new Date(vault.lastModified) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+                         (statusFilter === 'recent' && isRecent);
+    
     return matchesSearch && matchesFilter;
   });
 
-  const getContentSummary = (vault: any) => {
-    let textEntries = 0;
-    let mediaFiles = 0;
-
-    vault.folders.forEach((folder: any) => {
-      folder.entries.forEach((entry: any) => {
-        if (entry.type === 'text') {
-          textEntries++;
-        } else {
-          mediaFiles++;
-        }
-      });
-    });
-
-    return { textEntries, mediaFiles };
-  };
-
-  const getAssignedContacts = (vault: any) => {
-    return vault.recipients
-      .map((recipientId: string) => contacts.find(c => c.id === recipientId))
-      .filter(Boolean)
-      .slice(0, 3); // Show max 3 contacts
+  const getAssignedContacts = (vaultId: string) => {
+    // For now, we'll return empty array since vault recipients need to be fetched separately
+    // In a real implementation, you'd fetch vault recipients
+    return [];
   };
 
   const handleOpenVault = (vaultId: string) => {
@@ -75,10 +106,42 @@ export function VaultsPage() {
 
   const filterOptions = [
     { id: 'all', name: 'All' },
-    { id: 'active', name: 'Active Vaults' },
-    { id: 'empty', name: 'Empty Vaults' },
-    { id: 'recent', name: 'Recently Updated' }
+    { id: 'recent', name: 'Recently Created' }
   ];
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-4" />
+          <p className="text-white">Loading vaults...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && vaults.length === 0) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center">
+        <Card className="p-6 bg-red-900/20 border-red-500/30 max-w-md">
+          <div className="flex items-center space-x-3 text-red-400">
+            <AlertCircle className="w-6 h-6" />
+            <div>
+              <h3 className="font-semibold">Error Loading Vaults</h3>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="w-full mt-4"
+            variant="outline"
+          >
+            Retry
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen">
@@ -144,8 +207,18 @@ export function VaultsPage() {
           </div>
         </motion.div>
 
+        {/* Error Message */}
+        {error && (
+          <Card className="p-4 bg-red-900/20 border-red-500/30">
+            <div className="flex items-center space-x-2 text-red-400">
+              <AlertCircle className="w-4 h-4" />
+              <p className="text-sm">{error}</p>
+            </div>
+          </Card>
+        )}
+
         {/* Empty State */}
-        {filteredVaults.length === 0 && !searchQuery && statusFilter === 'all' && (
+        {vaults.length === 0 && !loading && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -173,10 +246,7 @@ export function VaultsPage() {
         {filteredVaults.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {filteredVaults.map((vault, index) => {
-              const { textEntries, mediaFiles } = getContentSummary(vault);
-              const assignedContacts = getAssignedContacts(vault);
-              const vaultStatus = getVaultStatus(vault);
-              const remainingContacts = vault.recipients.length - assignedContacts.length;
+              const assignedContacts = getAssignedContacts(vault.id);
 
               return (
                 <motion.div
@@ -202,39 +272,18 @@ export function VaultsPage() {
                           <h3 className="font-semibold text-white group-hover:text-blue-300 transition-colors truncate text-base">
                             {vault.name}
                           </h3>
-                          <p className="text-sm text-slate-400 line-clamp-2 mt-1">
-                            {vault.description}
-                          </p>
+                          {vault.description && (
+                            <p className="text-sm text-slate-400 line-clamp-2 mt-1">
+                              {vault.description}
+                            </p>
+                          )}
                         </div>
                       </div>
                       
-                      <Badge className={`${vaultStatus === 'active' 
-                        ? 'bg-green-500/20 text-green-400 border-green-500/30' 
-                        : 'bg-slate-500/20 text-slate-400 border-slate-500/30'
-                      } border text-xs`}>
-                        {vaultStatus === 'active' && <CheckCircle className="w-3 h-3 mr-1" />}
-                        {vaultStatus === 'empty' && <Archive className="w-3 h-3 mr-1" />}
-                        {vaultStatus === 'active' ? 'Active' : 'Empty'}
+                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 border text-xs">
+                        <Shield className="w-3 h-3 mr-1" />
+                        Active
                       </Badge>
-                    </div>
-
-                    {/* Content Summary */}
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium text-slate-300 mb-2">Content Summary</h4>
-                      <div className="flex items-center space-x-4 text-sm text-slate-400">
-                        <div className="flex items-center space-x-1">
-                          <FileText className="w-4 h-4" />
-                          <span>{textEntries} text entries</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <div className="flex items-center space-x-1">
-                            <Image className="w-4 h-4" />
-                            <Video className="w-4 h-4" />
-                            <Mic className="w-4 h-4" />
-                          </div>
-                          <span>{mediaFiles} media files</span>
-                        </div>
-                      </div>
                     </div>
 
                     {/* Assigned Contacts */}
@@ -251,31 +300,26 @@ export function VaultsPage() {
                                   </AvatarFallback>
                                 </Avatar>
                               ))}
-                              {remainingContacts > 0 && (
-                                <div className="w-8 h-8 rounded-full bg-slate-700 border-2 border-slate-800 flex items-center justify-center">
-                                  <span className="text-xs text-slate-300">+{remainingContacts}</span>
-                                </div>
-                              )}
                             </div>
                             <div className="flex items-center space-x-1 text-sm text-slate-400">
                               <Users className="w-3 h-3" />
-                              <span>{vault.recipients.length} total</span>
+                              <span>{assignedContacts.length} assigned</span>
                             </div>
                           </>
                         ) : (
                           <div className="text-sm text-slate-400 flex items-center space-x-2">
                             <Users className="w-4 h-4" />
-                            <span>No contacts assigned</span>
+                            <span>No contacts assigned yet</span>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Last Modified */}
+                    {/* Creation Date */}
                     <div className="flex items-center justify-between text-xs text-slate-400 mb-4">
                       <div className="flex items-center space-x-1">
                         <Calendar className="w-3 h-3" />
-                        <span>Modified {new Date(vault.lastModified).toLocaleDateString()}</span>
+                        <span>Created {new Date(vault.timestamp).toLocaleDateString()}</span>
                       </div>
                     </div>
 
@@ -294,7 +338,7 @@ export function VaultsPage() {
         )}
 
         {/* No Results State */}
-        {filteredVaults.length === 0 && (searchQuery || statusFilter !== 'all') && (
+        {filteredVaults.length === 0 && vaults.length > 0 && (searchQuery || statusFilter !== 'all') && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -327,6 +371,8 @@ export function VaultsPage() {
         <CreateVaultDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
+          onVaultCreated={handleVaultCreated}
+          contacts={contacts}
         />
 
         {/* Mobile bottom spacing */}

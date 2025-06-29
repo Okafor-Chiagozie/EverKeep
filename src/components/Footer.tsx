@@ -19,7 +19,7 @@ export const Footer = () => {
                           location.pathname.startsWith('/timeline') || 
                           location.pathname.startsWith('/settings');
 
-  if (user && user.isOnboarded && isDashboardPage) {
+  if (user && isDashboardPage) {
     return null;
   }
 

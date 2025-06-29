@@ -8,6 +8,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
+  console.log(user);
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -17,9 +18,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/" replace />;
   }
 
-  if (!user.isOnboarded) {
-    return <Navigate to="/onboarding" replace />;
-  }
+//   if (!user.isOnboarded) {
+//     return <Navigate to="/onboarding" replace />;
+//   }
 
   return <>{children}</>;
 }
