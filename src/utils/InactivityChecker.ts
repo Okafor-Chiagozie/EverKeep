@@ -241,12 +241,18 @@ export class InactivityChecker {
 
   /**
    * Generate a share link for a vault
+   * 🔥 FIXED: Use browser environment variables instead of Deno
    */
   private static async generateVaultShareLink(userId: string, vaultId: string): Promise<string> {
     try {
       const token = EncryptionUtils.generateShareToken(userId, vaultId);
-      // Use environment variable for base URL
-      const baseUrl = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'https://your-app.com';
+      
+      // 🔥 Use browser/Vite environment variables
+      const baseUrl = import.meta.env.VITE_APP_URL || 
+                     import.meta.env.VITE_VERCEL_URL || 
+                     window.location.origin || 
+                     'https://your-app.netlify.app';
+      
       return `${baseUrl}/vault/share/${token}`;
     } catch (error) {
       throw new Error(`Failed to generate share link: ${error}`);
@@ -275,7 +281,7 @@ export class InactivityChecker {
 
   /**
    * Send vault delivery email to a recipient
-   * Updated to use Edge Function
+   * 🔥 FIXED: Use browser fetch API with proper environment variables
    */
   private static async sendVaultDeliveryEmail(
     vault: VaultToDeliver, 
@@ -289,12 +295,20 @@ export class InactivityChecker {
     };
 
     try {
+      // 🔥 Use browser environment variables
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+      
+      if (!supabaseUrl || !serviceRoleKey) {
+        throw new Error('Missing Supabase configuration for email service');
+      }
+
       // Call the email service Edge Function
-      const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-vault-email`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-vault-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+          'Authorization': `Bearer ${serviceRoleKey}`
         },
         body: JSON.stringify(emailData)
       });

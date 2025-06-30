@@ -224,7 +224,64 @@ class InactivityChecker {
     for (const user of data || []) {
       const lastLogin = new Date(user.last_login);
       const daysSinceLogin = Math.floor((now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
-      
+      const threshold = user.inactivity_threshold_days;
+      const fiftyPercent = Math.floor(threshold * 0.5);
+      const seventyPercent = Math.floor(threshold * 0.7);
+
+      // --- Reminder at 50% ---
+      if (
+        daysSinceLogin >= fiftyPercent &&
+        daysSinceLogin < seventyPercent
+      ) {
+        // Check if 50% reminder already sent
+        const { data: reminderSent } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('title', 'Inactivity Reminder 50%')
+          .single();
+        if (!reminderSent) {
+          await InactivityChecker.sendReminderEmail(user, daysSinceLogin, threshold, 50);
+          await supabase.from('notifications').insert([{
+            user_id: user.id,
+            title: 'Inactivity Reminder 50%',
+            content: JSON.stringify({
+              type: 'reminder',
+              description: `50% of inactivity threshold reached (${daysSinceLogin}/${threshold} days)`,
+              timestamp: new Date().toISOString(),
+              percent: 50
+            })
+          }]);
+        }
+      }
+
+      // --- Reminder at 70% ---
+      if (
+        daysSinceLogin >= seventyPercent &&
+        daysSinceLogin < threshold
+      ) {
+        // Check if 70% reminder already sent
+        const { data: reminderSent } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('title', 'Inactivity Reminder 70%')
+          .single();
+        if (!reminderSent) {
+          await InactivityChecker.sendReminderEmail(user, daysSinceLogin, threshold, 70);
+          await supabase.from('notifications').insert([{
+            user_id: user.id,
+            title: 'Inactivity Reminder 70%',
+            content: JSON.stringify({
+              type: 'reminder',
+              description: `70% of inactivity threshold reached (${daysSinceLogin}/${threshold} days)`,
+              timestamp: new Date().toISOString(),
+              percent: 70
+            })
+          }]);
+        }
+      }
+
       if (daysSinceLogin >= user.inactivity_threshold_days) {
         const { data: todaysProcessing } = await supabase
           .from('notifications')
@@ -479,6 +536,42 @@ class InactivityChecker {
       }
     } catch (error) {
       console.error('Error marking user as processed:', error);
+    }
+  }
+
+  // --- Send reminder email to user ---
+  private static async sendReminderEmail(user: any, daysSinceLogin: number, threshold: number, percent: number) {
+    const emailData = {
+      to: user.email,
+      subject: `⏰ EverKeep Inactivity Reminder: ${percent}% of threshold reached`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #764ba2;">Inactivity Reminder</h2>
+          <p>Hi <b>${user.full_name}</b>,</p>
+          <p>This is a friendly reminder that you have not logged in for <b>${daysSinceLogin}</b> days.</p>
+          <p>You are now at <b>${percent}%</b> of your inactivity threshold (<b>${threshold}</b> days).</p>
+          <p>If you remain inactive, your designated contacts will receive access to your vault(s) when the threshold is reached.</p>
+          <p style="color: #888; font-size: 13px;">If you have any questions, please contact support@everkeep.com</p>
+        </div>
+      `
+    };
+    try {
+      const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-vault-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+        },
+        body: JSON.stringify(emailData)
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Email service error: ${errorText}`);
+      }
+      const result = await response.json();
+      console.log(`📧 Reminder email sent to ${user.email} (${percent}%)`, result);
+    } catch (error) {
+      console.error(`❌ Failed to send reminder email to ${user.email}:`, error);
     }
   }
 
