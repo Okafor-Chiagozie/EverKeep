@@ -23,6 +23,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'login', onSuccess
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   
   const navigate = useNavigate();
   const { setUser } = useAuth();
@@ -36,9 +37,11 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'login', onSuccess
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setSuccessMessage('');
     
     try {
       if (isLogin) {
+        // 🔥 LOGIN FLOW
         const response = await authService.login({ email, password });
         
         if (response.isSuccessful && response.data) {
@@ -51,21 +54,43 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'login', onSuccess
           setError(response.errors[0]?.description || 'Login failed');
         }
       } else {
-        const response = await authService.register({ 
+        // 🔥 REGISTRATION FLOW WITH AUTO-LOGIN
+        const registerResponse = await authService.register({ 
           email, 
           password, 
           full_name: name,
           phone 
         });
         
-        if (response.isSuccessful && response.data) {
-          setUser(response.data);
-          navigate('/dashboard');
-          onOpenChange(false);
-          resetForm();
-          onSuccess?.();
+        if (registerResponse.isSuccessful && registerResponse.data) {
+          console.log('✅ Registration successful, now logging in...');
+          
+          try {
+            // 🔥 AUTOMATICALLY LOGIN AFTER SUCCESSFUL REGISTRATION
+            const loginResponse = await authService.login({ email, password });
+            
+            if (loginResponse.isSuccessful && loginResponse.data) {
+              console.log('✅ Auto-login successful');
+              setUser(loginResponse.data.user);
+              navigate('/dashboard');
+              onOpenChange(false);
+              resetForm();
+              onSuccess?.();
+            } else {
+              // Registration succeeded but login failed - show login form
+              console.warn('⚠️ Registration succeeded but auto-login failed');
+              setSuccessMessage('Account created successfully! Verify your email and sign in with your credentials.');
+              setIsLogin(true); // Switch to login mode
+              setPassword(''); // Clear password for security
+            }
+          } catch (loginError) {
+            console.error('❌ Auto-login failed:', loginError);
+            setSuccessMessage('Account created successfully! Verify your email and sign in with your credentials.');
+            setIsLogin(true); // Switch to login mode
+            setPassword(''); // Clear password for security
+          }
         } else {
-          setError(response.errors[0]?.description || 'Registration failed');
+          setError(registerResponse.errors[0]?.description || 'Registration failed');
         }
       }
     } catch (error) {
@@ -82,6 +107,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'login', onSuccess
     setName('');
     setPhone('');
     setError('');
+    setSuccessMessage('');
   };
 
   const handleModalClose = () => {
@@ -92,6 +118,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'login', onSuccess
   const handleModeToggle = () => {
     setIsLogin(!isLogin);
     setError('');
+    setSuccessMessage('');
   };
 
   return (
@@ -126,6 +153,13 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'login', onSuccess
               }
             </p>
           </div>
+
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg">
+              <p className="text-green-300 text-sm">{successMessage}</p>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (
@@ -200,7 +234,12 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'login', onSuccess
               {isLoading ? (
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>{isLogin ? 'Signing In...' : 'Creating Account...'}</span>
+                  <span>
+                    {isLogin 
+                      ? 'Signing In...' 
+                      : 'Creating Account...'
+                    }
+                  </span>
                 </div>
               ) : (
                 <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
