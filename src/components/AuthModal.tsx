@@ -195,7 +195,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'login', onSuccess
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg py-4 h-auto"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-gray-200 text-lg py-4 h-auto"
             >
               {isLoading ? (
                 <div className="flex items-center space-x-2">

@@ -243,7 +243,7 @@ export function ContactsPage() {
 
           <Button
             onClick={handleAddContact}
-            className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex-shrink-0"
+            className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-gray-200 flex-shrink-0"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Contact

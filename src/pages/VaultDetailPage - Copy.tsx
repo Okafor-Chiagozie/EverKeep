@@ -1,5 +1,3 @@
-// VaultDetailPage.tsx - Fixed version
-
 import { useState, useRef, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -20,7 +18,6 @@ import { vaultService } from '@/services/vault';
 import { contactService } from '@/services/contact';
 import { cloudinaryService } from '@/services/cloudinary';
 import { mediaUtils } from '@/utils/mediaUtils';
-import EncryptionUtils from '@/utils/encryptionUtils'; // 🔥 IMPORTANT: Import encryption utils
 import { VaultContactsDialog } from '@/components/VaultContactsDialog';
 import { DeleteVaultDialog } from '@/components/DeleteVaultDialog';
 import { VaultSidebar } from '@/components/VaultSidebar';
@@ -71,6 +68,7 @@ export function VaultDetailPage() {
       const recipientsResponse = await vaultService.getVaultRecipients(id);
       
       if (recipientsResponse.isSuccessful) {
+        // Handle case where contacts might be null
         const validRecipients = recipientsResponse.data
           .map(r => r.contacts)
           .filter((contact): contact is Contact => contact !== null && contact !== undefined);
@@ -112,6 +110,7 @@ export function VaultDetailPage() {
         }
 
         if (recipientsResponse.isSuccessful) {
+          // Handle case where contacts might be null
           const validRecipients = recipientsResponse.data
             .map(r => r.contacts)
             .filter((contact): contact is Contact => contact !== null && contact !== undefined);
@@ -133,86 +132,49 @@ export function VaultDetailPage() {
     fetchVaultData();
   }, [id, user]);
 
-  // 🔥 FIXED: Convert vault entries to local format with proper decryption
+  // Convert vault entries to local format - separate text and media
   const textEntries: LocalVaultEntry[] = vaultEntries
     .filter(entry => entry.type === 'text')
-    .map(entry => {
-      let decryptedContent = entry.content || '';
-      
-      // 🔥 DECRYPT the content before displaying
-      if (entry.content && user && vault) {
-        try {
-          decryptedContent = EncryptionUtils.safeDecrypt(entry.content, user.id, vault.id);
-          console.log('🔓 Decrypted text entry:', {
-            entryId: entry.id,
-            originalLength: entry.content.length,
-            decryptedLength: decryptedContent.length,
-            preview: decryptedContent.substring(0, 50)
-          });
-        } catch (error) {
-          console.error('❌ Failed to decrypt text entry:', error);
-          // Fallback to original content if decryption fails
-          decryptedContent = entry.content;
-        }
-      }
-      
-      return {
-        id: entry.id,
-        type: entry.type as 'text',
-        title: decryptedContent.substring(0, 50) + (decryptedContent.length > 50 ? '...' : '') || 'Untitled',
-        content: decryptedContent, // 🔥 Use decrypted content here
-        timestamp: new Date(entry.timestamp),
-        encrypted: true,
-        folderName: 'Messages'
-      };
-    })
-    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    .map(entry => ({
+      id: entry.id,
+      type: entry.type as 'text',
+      title: entry.content?.substring(0, 50) + (entry.content && entry.content.length > 50 ? '...' : '') || 'Untitled',
+      content: entry.content || '',
+      timestamp: new Date(entry.timestamp),
+      encrypted: true,
+      folderName: 'Messages'
+    }))
+    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()); // Sort oldest to newest
 
-  // 🔥 FIXED: Convert media entries with proper decryption
+  // Convert media entries from vault_entries
   const mediaEntries: LocalVaultEntry[] = vaultEntries
     .filter(entry => entry.type !== 'text')
     .map(entry => {
       let cloudinaryUrl: string | undefined;
       let filename = 'Untitled';
       
-      // 🔥 DECRYPT the content before parsing
-      let decryptedContent = entry.content || '{}';
-      if (entry.content && user && vault) {
-        try {
-          decryptedContent = EncryptionUtils.safeDecrypt(entry.content, user.id, vault.id);
-          console.log('🔓 Decrypted media entry:', {
-            entryId: entry.id,
-            originalLength: entry.content.length,
-            decryptedLength: decryptedContent.length
-          });
-        } catch (error) {
-          console.error('❌ Failed to decrypt media entry:', error);
-          decryptedContent = entry.content;
-        }
-      }
-      
-      // Try to parse decrypted content as JSON to get Cloudinary URL
+      // Try to parse content as JSON to get Cloudinary URL
       try {
-        const contentData = JSON.parse(decryptedContent);
+        const contentData = JSON.parse(entry.content || '{}');
         cloudinaryUrl = contentData.cloudinaryUrl;
         filename = contentData.filename || filename;
       } catch {
         // If parsing fails, treat content as filename
-        filename = decryptedContent || 'Untitled';
+        filename = entry.content || 'Untitled';
       }
 
       return {
         id: entry.id,
         type: entry.type as 'image' | 'video' | 'audio' | 'document',
         title: filename,
-        content: decryptedContent, // 🔥 Use decrypted content
+        content: entry.content || '',
         timestamp: new Date(entry.timestamp),
         encrypted: true,
         folderName: 'Media',
         cloudinaryUrl
       };
     })
-    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()); // Sort oldest to newest
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !vault || !user) return;
@@ -249,6 +211,7 @@ export function VaultDetailPage() {
       const response = await vaultService.deleteVaultEntry(messageId);
       
       if (response.isSuccessful) {
+        // Remove from local state only after successful deletion
         setVaultEntries(prev => prev.filter(entry => entry.id !== messageId));
       } else {
         setError(response.errors[0]?.description || 'Failed to delete message');
@@ -268,6 +231,7 @@ export function VaultDetailPage() {
   const handleDeleteMedia = async (mediaId: string) => {
     if (deletingItems.has(mediaId)) return;
     
+    // Show confirmation dialog
     if (!window.confirm('Are you sure you want to delete this media file? This action cannot be undone.')) {
       return;
     }
@@ -275,25 +239,28 @@ export function VaultDetailPage() {
     setDeletingItems(prev => new Set([...prev, mediaId]));
     
     try {
+      // Find the media entry to get Cloudinary public_id for potential cleanup
       const mediaEntry = vaultEntries.find(entry => entry.id === mediaId);
       let publicId: string | null = null;
       
-      if (mediaEntry && mediaEntry.content && user && vault) {
+      if (mediaEntry && mediaEntry.content) {
         try {
-          // 🔥 Decrypt before parsing
-          const decryptedContent = EncryptionUtils.safeDecrypt(mediaEntry.content, user.id, vault.id);
-          const contentData = JSON.parse(decryptedContent);
+          const contentData = JSON.parse(mediaEntry.content);
           publicId = contentData.publicId;
         } catch {
           // If parsing fails, continue with deletion anyway
         }
       }
       
+      // Delete from database
       const response = await vaultService.deleteVaultEntry(mediaId);
       
       if (response.isSuccessful) {
+        // Remove from local state
         setVaultEntries(prev => prev.filter(entry => entry.id !== mediaId));
         
+        // Note: Cloudinary deletion requires server-side implementation with API secret
+        // For now, we'll just delete from our database
         if (publicId) {
           console.log(`Media deleted from database. Cloudinary file ${publicId} should be cleaned up by a background job.`);
         }
@@ -352,12 +319,14 @@ export function VaultDetailPage() {
     
     try {
       for (const file of Array.from(files)) {
+        // Upload to Cloudinary
         const cloudinaryResponse = await cloudinaryService.uploadFile(file);
         
         const fileType = file.type.startsWith('image/') ? 'image' :
                         file.type.startsWith('video/') ? 'video' :
                         file.type.startsWith('audio/') ? 'audio' : 'document';
 
+        // Save to database as vault entry with Cloudinary URL
         const response = await vaultService.createVaultEntry({
           vault_id: vault.id,
           type: fileType,
@@ -394,7 +363,9 @@ export function VaultDetailPage() {
     setVault(updatedVault);
   };
 
+  // New callback function to handle recipient changes
   const handleRecipientsChanged = () => {
+    // Refresh recipients data when contacts are added/removed
     fetchRecipients();
   };
 

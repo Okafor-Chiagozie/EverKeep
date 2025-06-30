@@ -114,15 +114,19 @@ export function VaultMessagesTab({
                 transition={{ delay: index * 0.1 }}
                 className="flex justify-end group"
               >
-                <div className="max-w-[80%] bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl rounded-tr-md p-4">
+                {/* 🔥 FIXED: Message bubble with proper overflow handling */}
+                <div className="max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] xl:max-w-[65%] bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl rounded-tr-md p-4 min-w-0">
                   <div className="text-white">
-                    <p className="text-base whitespace-pre-wrap leading-relaxed">{entry.content}</p>
+                    {/* 🔥 FIXED: Text content with proper word breaking */}
+                    <p className="text-base leading-relaxed break-words overflow-wrap-anywhere hyphens-auto">
+                      {entry.content}
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/20">
-                    <span className="text-xs text-blue-100">{formatTime(entry.timestamp)}</span>
+                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/20 flex-wrap gap-2">
+                    <span className="text-xs text-blue-100 flex-shrink-0">{formatTime(entry.timestamp)}</span>
                     <button
                       onClick={() => onDeleteMessage(entry.id)}
-                      className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 p-1 bg-transparent hover:bg-white/10 rounded"
+                      className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 p-1 bg-transparent hover:bg-white/10 rounded flex-shrink-0"
                       title="Delete message"
                     >
                       <Trash2 className="w-3 h-3 text-blue-100 hover:text-red-300" />
@@ -139,7 +143,8 @@ export function VaultMessagesTab({
       {/* Message Input - Fixed at bottom */}
       <div className="p-4 bg-slate-800/20 flex-shrink-0">
         <div className="flex items-end space-x-3">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
+            {/* 🔥 FIXED: Textarea with proper overflow handling */}
             <textarea
               ref={textareaRef}
               placeholder="Write a message..."
@@ -147,12 +152,14 @@ export function VaultMessagesTab({
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={onKeyDown}
               disabled={sendingMessage}
-              className="w-full bg-slate-800/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
+              className="w-full bg-slate-800/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 break-words overflow-wrap-anywhere"
               style={{
                 height: `${textareaHeight}px`,
                 minHeight: '40px',
                 maxHeight: '120px',
-                overflowY: textareaHeight >= 120 ? 'auto' : 'hidden'
+                overflowY: textareaHeight >= 120 ? 'auto' : 'hidden',
+                wordBreak: 'break-word',
+                overflowWrap: 'anywhere'
               }}
               rows={1}
             />
@@ -160,7 +167,7 @@ export function VaultMessagesTab({
           <Button
             onClick={onSendMessage}
             disabled={!newMessage.trim() || sendingMessage}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-[40px] py-6 mb-[0.3rem]"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-[40px] py-6 mb-[0.3rem] flex-shrink-0"
           >
             {sendingMessage ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -170,6 +177,42 @@ export function VaultMessagesTab({
           </Button>
         </div>
       </div>
+
+      {/* 🔥 ADDED: Custom CSS for better text wrapping */}
+      <style jsx>{`
+        .break-words {
+          word-break: break-word;
+          overflow-wrap: anywhere;
+          hyphens: auto;
+        }
+        
+        .overflow-wrap-anywhere {
+          overflow-wrap: anywhere;
+        }
+        
+        .hyphens-auto {
+          hyphens: auto;
+        }
+        
+        /* Custom scrollbar for messages area */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(51, 65, 85, 0.3);
+          border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.5);
+          border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(148, 163, 184, 0.7);
+        }
+      `}</style>
     </>
   );
 }

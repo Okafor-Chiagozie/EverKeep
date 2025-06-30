@@ -23,6 +23,7 @@ import { ContactsPage } from '@/pages/ContactsPage';
 import { TimelinePage } from '@/pages/TimelinePage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { RecipientView } from '@/pages/RecipientView';
+import { SharedVaultView } from '@/pages/SharedVaultView'; // NEW IMPORT
 
 import './App.css';
 
@@ -58,6 +59,9 @@ function AppContent() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/vault/:id/recipient" element={<RecipientView />} />
+          
+          {/* NEW ROUTE - Public vault sharing (no auth required) */}
+          <Route path="/vault/share/:token" element={<SharedVaultView />} />
           
           <Route path="/dashboard" element={
             <ProtectedRoute>
