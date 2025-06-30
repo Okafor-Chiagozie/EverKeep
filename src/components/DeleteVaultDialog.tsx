@@ -266,11 +266,6 @@ export function DeleteVaultDialog({
                   </div>
                 </div>
 
-                {/* Debug Info */}
-                <div className="text-xs text-slate-500 p-2 bg-slate-800/20 rounded">
-                  Debug: confirmationText="{confirmationText}", vaultName="{vaultName}", match={confirmationText === vaultName}, understood={understoodRisks}, enabled={isDeleteEnabled}
-                </div>
-
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
                   <Button

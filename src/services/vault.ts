@@ -767,6 +767,256 @@ export const vaultService = {
     }
   },
 
-  // ... (include all other existing methods like updateVault, deleteVault, etc.)
-  // For brevity, I'm showing the key encrypted methods. The rest remain the same.
+  async deleteVault(vaultId: string): Promise<StandardApiResponse<{
+   entriesDeleted: number;
+   itemsDeleted: number;
+   recipientsDeleted: number;
+   cloudinaryFiles: string[];
+   }>> {
+   try {
+      console.log('🗑️ Starting vault deletion process for vault:', vaultId);
+
+      // Step 1: Get all vault entries to track what we're deleting
+      const { data: entries, error: entriesError } = await supabase
+         .from('vault_entries')
+         .select('*')
+         .eq('vault_id', vaultId);
+
+      if (entriesError) {
+         console.error('❌ Failed to fetch vault entries:', entriesError);
+         return {
+         data: null,
+         isSuccessful: false,
+         errors: [{ field: 'vault_entries', description: entriesError.message }],
+         responseMessage: 'Failed to fetch vault entries for deletion',
+         responseCode: 'FETCH_ERROR'
+         };
+      }
+
+      // Step 2: Get vault info for decryption (need user_id)
+      const { data: vault, error: vaultError } = await supabase
+         .from('vaults')
+         .select('user_id')
+         .eq('id', vaultId)
+         .single();
+
+      if (vaultError || !vault) {
+         console.error('❌ Failed to fetch vault info:', vaultError);
+         return {
+         data: null,
+         isSuccessful: false,
+         errors: [{ field: 'vault', description: 'Vault not found' }],
+         responseMessage: 'Vault not found',
+         responseCode: 'NOT_FOUND'
+         };
+      }
+
+      // Step 3: Extract Cloudinary file references for cleanup
+      const cloudinaryFiles: string[] = [];
+      
+      if (entries && entries.length > 0) {
+         for (const entry of entries) {
+         if (entry.type !== 'text' && entry.content) {
+            try {
+               // Decrypt content to get Cloudinary info
+               const decryptedContent = EncryptionUtils.safeDecrypt(entry.content, vault.user_id, vaultId);
+               const contentData = JSON.parse(decryptedContent);
+               
+               if (contentData.publicId) {
+               cloudinaryFiles.push(contentData.publicId);
+               }
+            } catch (parseError) {
+               console.warn('⚠️ Could not parse entry content for Cloudinary cleanup:', parseError);
+            }
+         }
+         }
+      }
+
+      console.log('📋 Deletion summary:', {
+         entriesCount: entries?.length || 0,
+         cloudinaryFilesCount: cloudinaryFiles.length
+      });
+
+      // Step 4: Delete vault recipients
+      const { error: recipientsError } = await supabase
+         .from('vault_recipients')
+         .delete()
+         .eq('vault_id', vaultId);
+
+      if (recipientsError) {
+         console.error('❌ Failed to delete vault recipients:', recipientsError);
+         return {
+         data: null,
+         isSuccessful: false,
+         errors: [{ field: 'vault_recipients', description: recipientsError.message }],
+         responseMessage: 'Failed to delete vault recipients',
+         responseCode: 'DELETE_ERROR'
+         };
+      }
+
+      // Step 5: Delete vault entries
+      const { error: deleteEntriesError } = await supabase
+         .from('vault_entries')
+         .delete()
+         .eq('vault_id', vaultId);
+
+      if (deleteEntriesError) {
+         console.error('❌ Failed to delete vault entries:', deleteEntriesError);
+         return {
+         data: null,
+         isSuccessful: false,
+         errors: [{ field: 'vault_entries', description: deleteEntriesError.message }],
+         responseMessage: 'Failed to delete vault entries',
+         responseCode: 'DELETE_ERROR'
+         };
+      }
+
+      // Step 6: Delete the vault itself
+      const { error: deleteVaultError } = await supabase
+         .from('vaults')
+         .delete()
+         .eq('id', vaultId);
+
+      if (deleteVaultError) {
+         console.error('❌ Failed to delete vault:', deleteVaultError);
+         return {
+         data: null,
+         isSuccessful: false,
+         errors: [{ field: 'vault', description: deleteVaultError.message }],
+         responseMessage: 'Failed to delete vault',
+         responseCode: 'DELETE_ERROR'
+         };
+      }
+
+      // Step 7: Log the deletion activity
+      try {
+         await NotificationHelper.logActivity(
+         vault.user_id,
+         'vault_deleted',
+         {
+            vaultName: 'Deleted Vault', // We can't decrypt the name after deletion
+            entriesCount: entries?.length || 0
+         }
+         );
+      } catch (logError) {
+         console.warn('⚠️ Failed to log vault deletion activity:', logError);
+      }
+
+      console.log('✅ Vault deletion completed successfully');
+
+      // Return deletion statistics
+      return {
+         data: {
+         entriesDeleted: entries?.length || 0,
+         itemsDeleted: 0, // vault_items table doesn't exist in your schema
+         recipientsDeleted: 0, // We don't track this count, but deletion was successful
+         cloudinaryFiles
+         },
+         isSuccessful: true,
+         errors: [],
+         responseMessage: 'Vault deleted successfully',
+         responseCode: 'SUCCESS'
+      };
+
+   } catch (error) {
+      console.error('❌ Unexpected error during vault deletion:', error);
+      return {
+         data: null,
+         isSuccessful: false,
+         errors: [{ field: 'vault', description: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}` }],
+         responseMessage: 'An unexpected error occurred during deletion',
+         responseCode: 'UNEXPECTED_ERROR'
+      };
+   }
+   },
+
+   // Also add the missing updateVault method if it doesn't exist
+   async updateVault(vaultId: string, vaultData: UpdateVaultRequest): Promise<StandardApiResponse<Vault>> {
+   try {
+      // Get current vault data for encryption
+      const { data: currentVault, error: fetchError } = await supabase
+         .from('vaults')
+         .select('user_id')
+         .eq('id', vaultId)
+         .single();
+
+      if (fetchError || !currentVault) {
+         return {
+         data: null,
+         isSuccessful: false,
+         errors: [{ field: 'vault', description: 'Vault not found' }],
+         responseMessage: 'Vault not found',
+         responseCode: 'NOT_FOUND'
+         };
+      }
+
+      // Encrypt the updated data
+      const encryptedData: any = {};
+      
+      if (vaultData.name) {
+         encryptedData.name = EncryptionUtils.encryptText(vaultData.name, currentVault.user_id, vaultId);
+      }
+      
+      if (vaultData.description) {
+         encryptedData.description = EncryptionUtils.encryptText(vaultData.description, currentVault.user_id, vaultId);
+      }
+
+      // Update the vault
+      const { data, error } = await supabase
+         .from('vaults')
+         .update(encryptedData)
+         .eq('id', vaultId)
+         .select()
+         .single();
+
+      if (error) {
+         return {
+         data: null,
+         isSuccessful: false,
+         errors: [{ field: 'vault', description: error.message }],
+         responseMessage: 'Failed to update vault',
+         responseCode: 'UPDATE_ERROR'
+         };
+      }
+
+      // 🔥 Log activity - Vault Updated
+      try {
+         await NotificationHelper.logActivity(
+         currentVault.user_id,
+         'vault_updated',
+         {
+            vaultId: vaultId,
+            vaultName: vaultData.name || 'Updated Vault'
+         }
+         );
+      } catch (logError) {
+         console.warn('Failed to log vault update activity:', logError);
+      }
+
+      // Return decrypted data to client
+      const decryptedVault = {
+         ...data,
+         name: vaultData.name || EncryptionUtils.safeDecrypt(data.name, currentVault.user_id, vaultId),
+         description: vaultData.description || (data.description ? EncryptionUtils.safeDecrypt(data.description, currentVault.user_id, vaultId) : null)
+      };
+
+      return {
+         data: decryptedVault as Vault,
+         isSuccessful: true,
+         errors: [],
+         responseMessage: 'Vault updated successfully',
+         responseCode: 'SUCCESS'
+      };
+
+   } catch (error) {
+      console.error('Error updating vault:', error);
+      return {
+         data: null,
+         isSuccessful: false,
+         errors: [{ field: 'vault', description: 'An unexpected error occurred' }],
+         responseMessage: 'Failed to update vault',
+         responseCode: 'UNEXPECTED_ERROR'
+      };
+   }
+   }
 };

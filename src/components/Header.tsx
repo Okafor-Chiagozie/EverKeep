@@ -144,6 +144,38 @@ export function Header() {
             )}
           </AnimatePresence>
         </div>
+
+        {/* 🔥 RESPONSIVE IMAGE SECTION WITH LINK */}
+        <section className="fixed top-[6rem] right-3 z-40">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+          >
+            {/* Clean Clickable Image Container */}
+            <a 
+              href="https://bolt.new/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+              title="Visit Bolt.new"
+            >
+              <img
+                src="bolt.png"
+                alt="Visit Bolt.new"
+                className="
+                  w-16 h-16 object-cover transition-transform duration-300 hover:scale-105
+                  sm:w-20 sm:h-20
+                  md:w-24 md:h-24
+                  lg:w-28 lg:h-28
+                  xl:w-32 xl:h-32
+                  2xl:w-36 2xl:h-36
+                "
+                loading="lazy"
+              />
+            </a>
+          </motion.div>
+        </section>
       </motion.header>
 
       {/* Auth Modal */}

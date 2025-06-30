@@ -21,7 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { useState } from 'react';
 
 export function PricingPage() {
-  const [isAnnual, setIsAnnual] = useState(true);
+  const [isAnnual, setIsAnnual] = useState(false);
 
   const plans = [
     {
@@ -29,8 +29,8 @@ export function PricingPage() {
       description: 'Perfect for individuals starting their digital legacy',
       icon: Shield,
       color: 'blue',
-      monthlyPrice: 9,
-      annualPrice: 89,
+      monthlyPrice: 5,
+      annualPrice: 60,
       popular: false,
       features: [
         '1 Digital Vault',
@@ -39,7 +39,7 @@ export function PricingPage() {
         'Basic Encryption',
         'Email Support',
         'Mobile App Access',
-        'Deadman Switch',
+        'Secure Delivery',
         'Basic Templates'
       ],
       limitations: [
@@ -52,8 +52,8 @@ export function PricingPage() {
       description: 'Ideal for families wanting to preserve memories together',
       icon: Users,
       color: 'purple',
-      monthlyPrice: 19,
-      annualPrice: 189,
+      monthlyPrice: 10,
+      annualPrice: 120,
       popular: true,
       features: [
         '5 Digital Vaults',
@@ -62,7 +62,7 @@ export function PricingPage() {
         'Advanced Encryption',
         'Priority Support',
         'All Device Access',
-        'Advanced Deadman Switch',
+        'Advanced Secure Delivery',
         'Premium Templates',
         'Video Messages',
         'Scheduled Delivery',
@@ -76,8 +76,8 @@ export function PricingPage() {
       description: 'For those who want the ultimate in digital preservation',
       icon: Crown,
       color: 'amber',
-      monthlyPrice: 39,
-      annualPrice: 389,
+      monthlyPrice: 12,
+      annualPrice: 144,
       popular: false,
       features: [
         'Unlimited Vaults',
@@ -113,7 +113,7 @@ export function PricingPage() {
       category: 'Security & Delivery',
       items: [
         { name: 'Encryption Level', personal: 'Standard', family: 'Advanced', legacy: 'Military-Grade' },
-        { name: 'Deadman Switch', personal: 'Basic', family: 'Advanced', legacy: 'Custom Rules' },
+        { name: 'Secure Delivery', personal: 'Basic', family: 'Advanced', legacy: 'Custom Rules' },
         { name: 'Biometric Security', personal: '✗', family: '✗', legacy: '✓' },
         { name: 'Legal Documents', personal: '✗', family: 'Limited', legacy: 'Full Support' }
       ]

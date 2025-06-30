@@ -48,7 +48,7 @@ export function LandingPage() {
     },
     {
       icon: Clock,
-      title: 'Deadman Switch',
+      title: 'Secure Delivery',
       description: 'Automatically deliver your vault when you can no longer check in.',
       color: 'green'
     },
@@ -119,7 +119,7 @@ export function LandingPage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-24">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-4 py-12 lg:py-24">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Hero Content */}
             <motion.div
@@ -136,15 +136,14 @@ export function LandingPage() {
               </div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                Your Digital
+                Preserve What
                 <span className="block bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Afterlife Vault
+                  Matters, Forever
                 </span>
               </h1>
               
               <p className="text-lg sm:text-xl text-slate-300 mb-8 leading-relaxed max-w-2xl">
-                Securely store your most precious memories, messages, and digital assets. 
-                When you're gone, your loved ones will receive what matters most.
+                Securely store your assets, precious memories and messages in digital vaults that automatically reach your loved ones when you can't be there.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">

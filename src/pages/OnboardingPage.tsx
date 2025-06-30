@@ -41,7 +41,7 @@ const steps: OnboardingStep[] = [
   },
   {
     id: 3,
-    title: 'Setup Deadman Switch',
+    title: 'Setup Secure Delivery',
     description: 'Configure when to deliver your vault',
     icon: Clock
   },
@@ -176,7 +176,7 @@ export function OnboardingPage() {
                       <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
                         <Clock className="w-6 h-6 text-green-400 mb-2" />
                         <h3 className="font-semibold text-white">Automatic</h3>
-                        <p className="text-sm text-slate-400">Deadman switch delivery</p>
+                        <p className="text-sm text-slate-400">Secure Delivery delivery</p>
                       </div>
                     </div>
                   </motion.div>
@@ -245,7 +245,7 @@ export function OnboardingPage() {
                   >
                     <div className="text-center mb-6">
                       <h3 className="text-xl font-semibold text-white mb-2">
-                        Configure Your Deadman Switch
+                        Configure Your Secure Delivery
                       </h3>
                       <p className="text-slate-400">
                         This determines when your vault is automatically delivered if you stop checking in.

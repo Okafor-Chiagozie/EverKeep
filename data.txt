@@ -7,7 +7,7 @@ Create a clean, welcoming dashboard for a digital legacy preservation app with t
 Header: Welcome message with user's name and tagline "Your memories are secure and your legacy is being preserved"
 Remove:
 
-Deadman switch progress bar and terminology completely
+Secure Delivery progress bar and terminology completely
 "Delivered Vaults" card (user would be deceased when delivery happens)
 Time remaining percentage display
 Any mention of vault delivery or auto-delivery status

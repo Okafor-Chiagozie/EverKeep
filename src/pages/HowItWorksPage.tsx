@@ -68,7 +68,7 @@ export function HowItWorksPage() {
       icon: Clock,
       color: 'amber',
       details: [
-        'Set deadman switch timer',
+        'Set Secure Delivery timer',
         'Choose delivery triggers',
         'Add verification questions',
         'Schedule check-ins'
@@ -115,7 +115,7 @@ export function HowItWorksPage() {
   const deliveryMethods = [
     {
       icon: Clock,
-      title: 'Deadman Switch',
+      title: 'Secure Delivery',
       description: 'Automatic delivery after a period of inactivity',
       features: ['Customizable timeframe', 'Regular check-ins', 'Emergency contacts', 'Grace periods']
     },
