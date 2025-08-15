@@ -34,6 +34,7 @@ import { AttachmentPicker } from '@/components/AttachmentPicker';
 import { motion } from 'framer-motion';
 import { api } from '@/lib/api';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { toast } from 'sonner';
 
 // TypeScript interfaces for local entries
 interface LocalVaultEntry {
@@ -54,7 +55,7 @@ export function VaultDetailPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [showContactsDialog, setShowContactsDialog] = useState<boolean>(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
-  const [textareaHeight, setTextareaHeight] = useState<number>(40);
+  const [textareaHeight, setTextareaHeight] = useState<number>(28);
   const [textareaAtMax, setTextareaAtMax] = useState<boolean>(false);
   const [scrollOnNext, setScrollOnNext] = useState<boolean>(false);
   const [hasInitialScrolled, setHasInitialScrolled] = useState<boolean>(false);
@@ -76,19 +77,32 @@ export function VaultDetailPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
 
-  // Auto-resize composer textarea up to 10 lines
+  // Auto-resize composer textarea up to 8 lines
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
-    // Reset height to compute scrollHeight correctly
-    ta.style.height = 'auto';
+    
+    // Get computed styles for accurate measurements
     const styles = window.getComputedStyle(ta);
     const lineHeight = parseFloat(styles.lineHeight || '20');
-    const max = lineHeight * 8; // 8 lines
-    const next = Math.min(ta.scrollHeight, max);
-    ta.style.height = `${next}px`;
-    setTextareaHeight(next);
-    setTextareaAtMax(next >= max - 1);
+    const paddingTop = parseFloat(styles.paddingTop || '4'); // py-1 = 4px
+    const paddingBottom = parseFloat(styles.paddingBottom || '4'); // py-1 = 4px
+    
+    // Set consistent base height with proper padding
+    const baseHeight = paddingTop + lineHeight + paddingBottom; // 4 + 20 + 4 = 28px
+    ta.style.height = `${baseHeight}px`;
+    
+    // Only resize if content exceeds base height
+    if (ta.scrollHeight > baseHeight) {
+      const max = lineHeight * 8 + paddingTop + paddingBottom; // 8 lines max
+      const next = Math.min(ta.scrollHeight, max);
+      ta.style.height = `${next}px`;
+      setTextareaHeight(next);
+      setTextareaAtMax(next >= max - 1);
+    } else {
+      setTextareaHeight(baseHeight);
+      setTextareaAtMax(false);
+    }
   }, [newMessage]);
 
   // Function to fetch recipients data
@@ -443,27 +457,39 @@ export function VaultDetailPage() {
     
     try {
       for (const file of Array.from(files)) {
-        const cloudinaryResponse = await cloudinaryService.uploadFile(file);
-        
-        const fileType = file.type.startsWith('image/') ? 'image' :
-                        file.type.startsWith('video/') ? 'video' :
-                        file.type.startsWith('audio/') ? 'audio' : 'document';
+        toast.promise(
+          (async () => {
+            const cloudinaryResponse = await cloudinaryService.uploadFile(file);
+            
+            const fileType = file.type.startsWith('image/') ? 'image' :
+                            file.type.startsWith('video/') ? 'video' :
+                            file.type.startsWith('audio/') ? 'audio' : 'document';
 
-        const response = await vaultService.createVaultEntry({
-          vault_id: vault.id,
-          type: fileType,
-          content: JSON.stringify({
-            filename: file.name,
-            cloudinaryUrl: cloudinaryResponse.secure_url,
-            publicId: cloudinaryResponse.public_id,
-            size: cloudinaryResponse.bytes,
-            format: cloudinaryResponse.format
-          })
-        });
+            const response = await vaultService.createVaultEntry({
+              vault_id: vault.id,
+              type: fileType,
+              content: JSON.stringify({
+                filename: file.name,
+                cloudinaryUrl: cloudinaryResponse.secure_url,
+                publicId: cloudinaryResponse.public_id,
+                size: cloudinaryResponse.bytes,
+                format: cloudinaryResponse.format
+              })
+            });
 
-        if (response.isSuccessful && response.data) {
-          setVaultEntries(prev => [...prev, response.data!]);
-        }
+            if (response.isSuccessful && response.data) {
+              setVaultEntries(prev => [...prev, response.data!]);
+              return `File "${file.name}" uploaded successfully`;
+            } else {
+              throw new Error('Failed to create vault entry');
+            }
+          })(),
+          {
+            loading: `Uploading ${file.name}...`,
+            success: (message) => message,
+            error: `Failed to upload ${file.name}`
+          }
+        );
       }
     } catch (err) {
       console.error('Error uploading files:', err);
@@ -490,38 +516,46 @@ export function VaultDetailPage() {
   const attachFileToMessage = async (file: File, parentMessageId: string) => {
     setPendingFiles(prev => [...prev, file]);
     
+    // Show immediate feedback
+    toast.info(`Adding ${file.name} to message...`);
+    
+    toast.promise(
+      (async () => {
+        const cloudinaryResponse = await cloudinaryService.uploadFile(file);
+        const fileType = file.type.startsWith('image/') ? 'image' :
+                         file.type.startsWith('video/') ? 'video' :
+                         file.type.startsWith('audio/') ? 'audio' : 'document';
 
-    try {
-      const cloudinaryResponse = await cloudinaryService.uploadFile(file);
-      const fileType = file.type.startsWith('image/') ? 'image' :
-                       file.type.startsWith('video/') ? 'video' :
-                       file.type.startsWith('audio/') ? 'audio' : 'document';
+        const entryPayload = {
+          filename: file.name,
+          cloudinaryUrl: cloudinaryResponse.secure_url,
+          publicId: cloudinaryResponse.public_id,
+          size: cloudinaryResponse.bytes,
+          format: cloudinaryResponse.format,
+        };
 
-      const entryPayload = {
-        filename: file.name,
-        cloudinaryUrl: cloudinaryResponse.secure_url,
-        publicId: cloudinaryResponse.public_id,
-        size: cloudinaryResponse.bytes,
-        format: cloudinaryResponse.format,
-      };
+        const response = await vaultService.createVaultEntry({
+          vault_id: vault!.id,
+          type: fileType,
+          content: JSON.stringify(entryPayload),
+          parent_id: parentMessageId,
+        });
 
-      const response = await vaultService.createVaultEntry({
-        vault_id: vault!.id,
-        type: fileType,
-        content: JSON.stringify(entryPayload),
-        parent_id: parentMessageId,
-      });
-
-      if (response.isSuccessful && response.data) {
-        setVaultEntries(prev => [...prev, response.data!]);
+        if (response.isSuccessful && response.data) {
+          setVaultEntries(prev => [...prev, response.data!]);
+          return `File "${file.name}" attached successfully`;
+        } else {
+          throw new Error('Failed to create vault entry');
+        }
+      })(),
+      {
+        loading: `Attaching ${file.name}...`,
+        success: (message) => message,
+        error: `Failed to attach ${file.name}`
       }
-    } catch (e) {
-      console.error('Error attaching file to message:', e);
-      setError('Failed to attach file to message');
-    } finally {
-      
-      setPendingFiles(prev => prev.filter(f => f.name !== file.name));
-    }
+    );
+
+    setPendingFiles(prev => prev.filter(f => f.name !== file.name));
   };
 
   // Auto-scroll to bottom only after sending a new message
@@ -787,15 +821,15 @@ export function VaultDetailPage() {
               {/* Composer (message with attachments) */}
               <div className="p-4 bg-slate-800/20 flex-shrink-0">
                 {/* Reuse existing composer with attachments preview */}
-                <div className="flex items-center space-x-3 py-1">
+                <div className="flex items-end space-x-3 py-1">
                 <div className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 focus-within:ring-1 focus-within:ring-blue-500/50 focus-within:ring-inset">
                   <textarea
                     ref={textareaRef}
-                    className="w-full bg-transparent text-white placeholder:text-slate-400 border-0 outline-none resize-none py-0 leading-6 min-h-[1.5rem] custom-scrollbar"
+                    className="w-full bg-transparent text-white placeholder:text-slate-400 border-0 outline-none resize-none py-1 leading-6 min-h-[2rem] custom-scrollbar"
                     placeholder="Type a message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
+                    onKeyDown={handleKeyDown}
                     rows={1}
                     style={{ height: textareaHeight, overflowY: textareaAtMax ? 'auto' : 'hidden' }}
                   />
@@ -803,27 +837,16 @@ export function VaultDetailPage() {
                   <Button
                     onClick={handleSendMessage}
                     disabled={!newMessage.trim() || sendingMessage || uploadingFiles}
-                    className="w-10 h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
+                    className="w-12 h-12 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
                   >
                     {sendingMessage || uploadingFiles ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-6 h-6 animate-spin" />
                     ) : (
-                      <Send className="w-7 h-7" />
+                      <Send className="w-8 h-8" />
                     )}
                   </Button>
                 </div>
-                {pendingFiles.length > 0 && (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {pendingFiles.map(file => (
-                      <div key={file.name} className="flex items-center bg-slate-700/50 text-slate-300 text-xs px-3 py-1 rounded-full">
-                        {file.name}
-                        {uploadingFiles && pendingFiles.some(f => f.name === file.name) && (
-                          <Loader2 className="w-3 h-3 ml-2 animate-spin" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+
               </div>
           </div>
         </div>
