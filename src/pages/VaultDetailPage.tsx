@@ -309,7 +309,7 @@ export function VaultDetailPage() {
               parent_id: parentMessage.id,
             } as any);
             if (attachResp.isSuccessful && attachResp.data) {
-              setVaultEntries(prev => [...prev, attachResp.data]);
+              setVaultEntries(prev => [...prev, attachResp.data!]);
             }
           } catch (e) {
             console.error('Attachment upload failed:', e);
@@ -462,7 +462,7 @@ export function VaultDetailPage() {
         });
 
         if (response.isSuccessful && response.data) {
-          setVaultEntries(prev => [...prev, response.data]);
+          setVaultEntries(prev => [...prev, response.data!]);
         }
       }
     } catch (err) {
@@ -481,9 +481,7 @@ export function VaultDetailPage() {
     navigate('/vaults');
   };
 
-  const handleVaultUpdated = (updatedVault: Vault) => {
-    setVault(updatedVault);
-  };
+
 
   const handleRecipientsChanged = () => {
     fetchRecipients();
@@ -515,7 +513,7 @@ export function VaultDetailPage() {
       });
 
       if (response.isSuccessful && response.data) {
-        setVaultEntries(prev => [...prev, response.data]);
+        setVaultEntries(prev => [...prev, response.data!]);
       }
     } catch (e) {
       console.error('Error attaching file to message:', e);
@@ -710,10 +708,8 @@ export function VaultDetailPage() {
                                 onSave={async (content: string) => {
                                   // call update endpoint
                                   try {
-                                    const { data, error } = await api.patch(`/vaults/entries/${message.id}`, { content });
-                                    if (!error) {
-                                      setVaultEntries(prev => prev.map(e => e.id === message.id ? { ...e, content } : e));
-                                    }
+                                    await api.patch(`/vaults/entries/${message.id}`, { content });
+                                    setVaultEntries(prev => prev.map(e => e.id === message.id ? { ...e, content } : e));
                                   } catch (e) {
                                     setError('Failed to update message');
                                   }

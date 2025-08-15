@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useParams } from 'react-router-dom';
 import { 
   Shield, 
   Key, 
@@ -21,11 +20,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 export function RecipientView() {
-  const { id } = useParams();
   const [step, setStep] = useState(1); // 1: OTP, 2: Identity, 3: Decrypting, 4: Vault
   const [otp, setOtp] = useState('');
   const [identityAnswer, setIdentityAnswer] = useState('');
-  const [isDecrypting, setIsDecrypting] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
 
   // Mock vault data
@@ -91,9 +88,7 @@ export function RecipientView() {
     e.preventDefault();
     if (identityAnswer.trim()) {
       setStep(3);
-      setIsDecrypting(true);
       await new Promise(resolve => setTimeout(resolve, 3000));
-      setIsDecrypting(false);
       setStep(4);
     }
   };
