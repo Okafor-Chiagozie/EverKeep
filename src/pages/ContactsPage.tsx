@@ -49,7 +49,7 @@ export function ContactsPage() {
           user_id: user.id
         });
 
-        if (response.isSuccessful) {
+        if (response.isSuccessful && response.data) {
           setContacts(response.data);
           // Fetch vault counts for each contact
           await fetchVaultCounts(response.data);
@@ -82,13 +82,13 @@ export function ContactsPage() {
             user_id: user?.id
           });
           
-          if (vaultsResponse.isSuccessful) {
+          if (vaultsResponse.isSuccessful && vaultsResponse.data) {
             let contactVaultCount = 0;
             
             // For each vault, check if this contact is a recipient
             for (const vault of vaultsResponse.data) {
               const recipientsResponse = await vaultService.getVaultRecipients(vault.id);
-              if (recipientsResponse.isSuccessful) {
+              if (recipientsResponse.isSuccessful && recipientsResponse.data) {
                 const isRecipient = recipientsResponse.data.some(
                   recipient => recipient.contact_id === contact.id
                 );

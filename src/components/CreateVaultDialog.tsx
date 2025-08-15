@@ -96,7 +96,7 @@ export const CreateVaultDialog = ({ open, onOpenChange, onVaultCreated, contacts
     
     try {
       // Step 1: Create the vault
-      const vaultResponse = await vaultService.createVault(user.id, {
+      const vaultResponse = await vaultService.createVault({
         name: vaultName.trim(),
         description: vaultDescription.trim() || undefined
       });

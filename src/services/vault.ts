@@ -4,6 +4,7 @@ import {
   VaultEntry,
   VaultRecipient,
   CreateVaultRequest,
+  CreateVaultEntryRequest,
   UpdateVaultRequest,
   AddVaultRecipientRequest,
   GetVaultsRequest,

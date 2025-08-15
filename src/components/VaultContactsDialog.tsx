@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { vaultService } from '@/services/vault';
-import { Vault, VaultRecipient } from '@/types/vault';
+import { VaultRecipient } from '@/types/vault';
 import { Contact } from '@/types/contact';
 
 interface VaultContactsDialogProps {
@@ -61,7 +61,7 @@ export function VaultContactsDialog({
         setLoading(true);
         const response = await vaultService.getVaultRecipients(vaultId);
         
-        if (response.isSuccessful) {
+        if (response.isSuccessful && response.data) {
           setVaultRecipients(response.data);
         } else {
           setError('Failed to load vault recipients');
@@ -147,7 +147,7 @@ export function VaultContactsDialog({
           contact_id: contactId
         });
         
-        if (response.isSuccessful) {
+        if (response.isSuccessful && response.data) {
           addedRecipients.push(response.data);
         }
       }

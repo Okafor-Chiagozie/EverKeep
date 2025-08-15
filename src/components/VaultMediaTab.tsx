@@ -84,6 +84,7 @@ export function VaultMediaTab({
       case 'video': return Video;
       case 'audio': return Mic;
       case 'document': return File;
+      case 'text': return FileText;
       default: return FileText;
     }
   };

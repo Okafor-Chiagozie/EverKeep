@@ -390,8 +390,8 @@ export function ContactPage() {
                 <h3 className="text-xl font-bold text-white mb-6">Quick Answers</h3>
                 
                 <div className="space-y-4">
-                  {faqs.slice(0, 3).map((faq, index) => (
-                    <div key={index} className="border-b border-slate-700/50 last:border-b-0 pb-4 last:pb-0">
+                  {faqs.slice(0, 3).map((faq) => (
+                    <div key={faq.question} className="border-b border-slate-700/50 last:border-b-0 pb-4 last:pb-0">
                       <h4 className="font-medium text-white mb-2 text-sm">{faq.question}</h4>
                       <p className="text-slate-400 text-sm">{faq.answer}</p>
                     </div>

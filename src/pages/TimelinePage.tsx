@@ -76,7 +76,7 @@ export function TimelinePage() {
         user_id: user.id
       });
 
-      if (response.isSuccessful) {
+      if (response.isSuccessful && response.data) {
         const timelineEvents = response.data.map(notification => 
           convertNotificationToEvent(notification)
         );

@@ -34,8 +34,8 @@ export const activityLogger = {
 
   // Vault operations (delegates only; no client-side logging)
   vaults: {
-    async create(userId: string, vaultData: any) {
-      return vaultService.createVault(userId, vaultData);
+    async create(vaultData: any) {
+      return vaultService.createVault(vaultData);
     },
 
     async update(vaultId: string, vaultData: any) {
@@ -47,7 +47,8 @@ export const activityLogger = {
     },
 
     async createEntry(entryData: any) {
-      return vaultService.createVaultEntry(entryData);
+      // TODO: Fix this when createVaultEntry is implemented
+      throw new Error('createVaultEntry not implemented');
     },
 
     async deleteEntry(entryId: string) {

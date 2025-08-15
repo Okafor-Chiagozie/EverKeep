@@ -62,15 +62,15 @@ export function Dashboard() {
           user_id: user.id
         });
 
-        if (vaultsResponse.isSuccessful) {
+        if (vaultsResponse.isSuccessful && vaultsResponse.data) {
           setVaults(vaultsResponse.data);
         }
         
-        if (contactsResponse.isSuccessful) {
+        if (contactsResponse.isSuccessful && contactsResponse.data) {
           setContacts(contactsResponse.data);
         }
         
-        if (activityResponse.isSuccessful) {
+        if (activityResponse.isSuccessful && activityResponse.data) {
           setRecentActivity(activityResponse.data);
         }
         

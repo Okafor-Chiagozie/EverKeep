@@ -123,9 +123,9 @@ export function ContactDialog({
           role: formData.role
         };
 
-        const response = await contactService.updateContact(contact.id, updateData);
+        const response = await contactService.updateContact(contact!.id, updateData);
         
-        if (response.isSuccessful) {
+        if (response.isSuccessful && response.data) {
           setIsSuccess(true);
           onContactSaved(response.data);
           
@@ -146,7 +146,7 @@ export function ContactDialog({
 
         const response = await contactService.createContact(user.id, contactData);
 
-        if (response.isSuccessful) {
+        if (response.isSuccessful && response.data) {
           setIsSuccess(true);
           onContactSaved(response.data);
 

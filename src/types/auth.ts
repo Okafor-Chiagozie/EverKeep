@@ -25,6 +25,9 @@ export interface AuthUser {
   isVerified: boolean;
   last_login: string;
   created_at: string;
+  isOnboarded?: boolean;
+  deadmanTrigger?: number;
+  encryptionKey?: string;
 }
 
 export interface Session {
