@@ -81,7 +81,13 @@ export function OnboardingPage() {
     if (currentStep === steps.length) {
       // Complete onboarding
       setUser({ 
-        ...user,
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        full_name: user.full_name,
+        isVerified: user.isVerified,
+        last_login: user.last_login,
+        created_at: user.created_at,
         isOnboarded: true, 
         deadmanTrigger: parseInt(deadmanDays),
         encryptionKey: 'generated-key-hash'

@@ -370,7 +370,7 @@ export function ContactPage() {
                 <h3 className="text-xl font-bold text-white mb-6">Follow Us</h3>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  {socialLinks.map((social, index) => (
+                  {socialLinks.map((social) => (
                     <motion.a
                       key={social.name}
                       href={social.url}

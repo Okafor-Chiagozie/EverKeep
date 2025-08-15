@@ -19,7 +19,7 @@ import { mediaUtils } from '@/utils/mediaUtils';
 
 interface LocalVaultEntry {
   id: string;
-  type: 'text' | 'image' | 'video' | 'audio' | 'document';
+  type: 'image' | 'video' | 'audio' | 'document';
   title: string;
   content: string;
   timestamp: Date;
@@ -78,7 +78,7 @@ export function VaultMediaTab({
     }
   };
 
-  const getMediaIcon = (type: string) => {
+  const getMediaIcon = (type: LocalVaultEntry['type']) => {
     switch (type) {
       case 'image': return Image;
       case 'video': return Video;

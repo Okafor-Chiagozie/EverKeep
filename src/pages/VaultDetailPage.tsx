@@ -340,7 +340,7 @@ export function VaultDetailPage() {
       const response = await vaultService.deleteVaultEntry(messageId);
       
       if (response.isSuccessful) {
-        setVaultEntries(prev => prev.filter(entry => entry.id !== messageId));
+        setVaultEntries(prev => prev.filter(entry => entry.id !== messageId).filter((entry): entry is VaultEntry => entry !== null));
       } else {
         setError(response.errors[0]?.description || 'Failed to delete message');
       }
