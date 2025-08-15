@@ -78,7 +78,7 @@ export function OnboardingPage() {
       setIsGeneratingKeys(false);
     }
     
-    if (currentStep === steps.length) {
+    if (currentStep === steps.length && user) {
       // Complete onboarding
       setUser({ 
         id: user.id,

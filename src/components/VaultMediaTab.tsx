@@ -84,7 +84,6 @@ export function VaultMediaTab({
       case 'video': return Video;
       case 'audio': return Mic;
       case 'document': return File;
-      case 'text': return FileText;
       default: return FileText;
     }
   };
@@ -157,6 +156,10 @@ export function VaultMediaTab({
                                 {mediaUtils.getFileExtension(entry.title).toUpperCase() || 'DOC'}
                               </div>
                             </div>
+                          </div>
+                        ) : entry.type === 'audio' ? (
+                          <div className="relative w-full h-full bg-slate-600 flex items-center justify-center">
+                            <Mic className="w-12 h-12 text-slate-300" />
                           </div>
                         ) : (
                           <IconComponent className="w-8 h-8 text-slate-400" />
