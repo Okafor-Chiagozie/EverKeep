@@ -2,10 +2,9 @@
 import { contactService } from './contact';
 import { vaultService } from './vault';
 import { authService } from './auth';
-import { NotificationHelper } from '@/utils/notificationHelper';
 
 export const activityLogger = {
-  // Contact operations with logging
+  // Contact operations (delegates only; no client-side logging)
   contacts: {
     async create(userId: string, contactData: any) {
       return contactService.createContact(userId, contactData);
@@ -33,7 +32,7 @@ export const activityLogger = {
     }
   },
 
-  // Vault operations with logging
+  // Vault operations (delegates only; no client-side logging)
   vaults: {
     async create(userId: string, vaultData: any) {
       return vaultService.createVault(userId, vaultData);
@@ -81,7 +80,7 @@ export const activityLogger = {
     }
   },
 
-  // Auth operations with logging
+  // Auth operations (delegates only; no client-side logging)
   auth: {
     async login(credentials: any, metadata?: any) {
       return authService.login(credentials, metadata);
@@ -104,42 +103,17 @@ export const activityLogger = {
     }
   },
 
-  // Custom activity logging
-  async logCustomActivity(userId: string, title: string, description: string, type: string = 'system_event', metadata?: any) {
-    try {
-      await NotificationHelper.logActivity(userId, type as any, {
-        title,
-        description,
-        metadata
-      });
-    } catch (error) {
-      console.warn('Failed to log custom activity:', error);
-    }
+  // Stubbed client-side logging methods (no-op to avoid duplicates)
+  async logCustomActivity(_userId: string, _title: string, _description: string, _type: string = 'system_event', _metadata?: any) {
+    return;
   },
 
-  // Security event logging
-  async logSecurityEvent(userId: string, description: string, metadata?: any) {
-    try {
-      await NotificationHelper.logActivity(userId, 'security_check', {
-        description,
-        metadata
-      });
-    } catch (error) {
-      console.warn('Failed to log security event:', error);
-    }
+  async logSecurityEvent(_userId: string, _description: string, _metadata?: any) {
+    return;
   },
 
-  // System event logging
-  async logSystemEvent(userId: string, title: string, description: string, metadata?: any) {
-    try {
-      await NotificationHelper.logActivity(userId, 'system_event', {
-        title,
-        description,
-        metadata
-      });
-    } catch (error) {
-      console.warn('Failed to log system event:', error);
-    }
+  async logSystemEvent(_userId: string, _title: string, _description: string, _metadata?: any) {
+    return;
   }
 };
 

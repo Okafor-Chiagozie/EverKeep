@@ -21,7 +21,12 @@ import {
   Download,
   RefreshCw,
   Filter,
-  Bell
+  Bell,
+  Image,
+  Video,
+  FileAudio,
+  File as FileGeneric,
+  ShieldCheck
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -160,15 +165,27 @@ export function TimelinePage() {
     return matchesSearch && matchesFilter;
   });
 
-  // Get icon component for event type
-  const getEventIcon = (type: ActivityType) => {
+  // Intelligent icon for event type and metadata
+  const getEventIcon = (type: ActivityType, metadata?: Record<string, any>) => {
+    if (type === 'file_uploaded' && metadata) {
+      const fileType: string = (metadata.fileType || '').toString().toLowerCase();
+      const fileName: string = (metadata.fileName || '').toString().toLowerCase();
+      const byExt = (exts: string[]) => exts.some(ext => fileName.endsWith(ext));
+
+      if (fileType.includes('image') || byExt(['.png', '.jpg', '.jpeg', '.gif', '.webp'])) return Image;
+      if (fileType.includes('video') || byExt(['.mp4', '.mov', '.avi', '.mkv', '.webm'])) return Video;
+      if (fileType.includes('audio') || byExt(['.mp3', '.wav', '.aac', '.ogg'])) return FileAudio;
+      if (byExt(['.pdf', '.doc', '.docx', '.txt', '.md'])) return FileText;
+      return FileGeneric;
+    }
+
     const iconMap: Record<ActivityType, any> = {
       vault_created: Shield,
-      vault_updated: Shield,
+      vault_updated: ShieldCheck,
       vault_deleted: Trash2,
       entry_added: FileText,
       entry_deleted: FileText,
-      contact_added: Users,
+      contact_added: UserPlus,
       contact_updated: Users,
       contact_deleted: UserMinus,
       recipient_added: UserPlus,
@@ -275,6 +292,17 @@ export function TimelinePage() {
     { id: 'system', name: 'System', count: events.filter(e => e.type === 'system_event').length }
   ];
 
+  // Static class mapping for stat cards to avoid dynamic tailwind classes
+  const statColorClassMap: Record<string, { bg: string; text: string; }> = {
+    blue: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
+    green: { bg: 'bg-green-500/20', text: 'text-green-400' },
+    purple: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
+    amber: { bg: 'bg-amber-500/20', text: 'text-amber-400' },
+    orange: { bg: 'bg-orange-500/20', text: 'text-orange-400' },
+    red: { bg: 'bg-red-500/20', text: 'text-red-400' },
+    slate: { bg: 'bg-slate-500/20', text: 'text-slate-400' },
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -380,19 +408,22 @@ export function TimelinePage() {
               icon: Upload, 
               color: 'purple' 
             },
-          ].map((stat, index) => (
+          ].map((stat) => {
+            const cls = statColorClassMap[stat.color] || statColorClassMap.blue;
+            return (
             <Card key={stat.title} className="p-3 sm:p-4 lg:p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50 hover:border-slate-600/50 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stat.value}</p>
                   <p className="text-xs sm:text-sm text-slate-400">{stat.title}</p>
                 </div>
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl bg-${stat.color}-500/20 flex items-center justify-center`}>
-                  <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-${stat.color}-400`} />
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center ${cls.bg}`}>
+                    <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 ${cls.text}`} />
                 </div>
               </div>
             </Card>
-          ))}
+            );
+          })}
         </motion.div>
 
         {/* Filters */}
@@ -447,7 +478,7 @@ export function TimelinePage() {
 
             <div className="space-y-4 sm:space-y-6">
               {filteredEvents.map((event, index) => {
-                const IconComponent = getEventIcon(event.type);
+                const IconComponent = getEventIcon(event.type, event.metadata);
                 const colorClasses = getEventColor(event.type);
                 
                 return (
@@ -496,20 +527,6 @@ export function TimelinePage() {
                             <span>{event.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
                         </div>
-
-                        {event.metadata && Object.keys(event.metadata).length > 0 && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-slate-400 hover:text-white w-fit text-xs sm:text-sm opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                            onClick={() => {
-                              console.log(`Event: ${event.title}`, event.metadata);
-                              // You could implement a modal here to show detailed metadata
-                            }}
-                          >
-                            View Details
-                          </Button>
-                        )}
                       </div>
                     </Card>
                   </motion.div>
@@ -518,71 +535,36 @@ export function TimelinePage() {
             </div>
 
             {/* Load More */}
+            <div className="flex justify-center mt-6">
             {hasMore && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="text-center mt-8 sm:mt-12"
-              >
                 <Button 
-                  variant="outline" 
-                  className="border-slate-600 text-slate-300 hover:bg-slate-800"
                   onClick={loadMoreEvents}
                   disabled={loadingMore}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
-                  {loadingMore ? (
-                    <div className="flex items-center space-x-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Loading more...</span>
-                    </div>
-                  ) : (
-                    'Load More Events'
-                  )}
+                  {loadingMore && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Load more
                 </Button>
-              </motion.div>
             )}
+            </div>
           </div>
         ) : (
-          /* Empty State */
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-12 sm:py-16"
-          >
-            <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 rounded-full bg-slate-800/50 flex items-center justify-center">
-              {searchQuery || filterType !== 'all' ? (
-                <Filter className="w-10 h-10 sm:w-12 sm:h-12 text-slate-400" />
-              ) : (
-                <Clock className="w-10 h-10 sm:w-12 sm:h-12 text-slate-400" />
-              )}
+          <Card className="p-6 bg-slate-900/50 border-slate-700/50 text-center">
+            <div className="flex flex-col items-center">
+              <FileText className="w-8 h-8 text-slate-400 mb-2" />
+              <p className="text-slate-300 font-medium">No timeline events yet</p>
+              <p className="text-slate-500 text-sm">Your recent activities will appear here.</p>
+              <div className="mt-4 flex gap-2">
+                <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800" onClick={refreshTimeline}>
+                  <RefreshCw className="w-4 h-4 mr-2" /> Refresh
+                </Button>
+                <Button className="bg-blue-600 hover:bg-blue-700" onClick={clearFilters}>
+                  <Filter className="w-4 h-4 mr-2" /> Clear Filters
+                </Button>
+              </div>
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
-              {searchQuery || filterType !== 'all' ? 'No Events Found' : 'No Activity Yet'}
-            </h3>
-            <p className="text-sm sm:text-base text-slate-400 mb-6 px-4 max-w-md mx-auto">
-              {searchQuery 
-                ? `No events match "${searchQuery}"${filterType !== 'all' ? ` in ${filterType} category` : ''}`
-                : filterType !== 'all'
-                ? `No events found in the ${filterType} category`
-                : 'Start using your vault to see activity here. Create vaults, add contacts, and upload files to build your timeline.'
-              }
-            </p>
-            {(searchQuery || filterType !== 'all') && (
-              <Button
-                onClick={clearFilters}
-                variant="outline"
-                className="border-slate-600 text-slate-300 hover:bg-slate-800"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Clear Filters
-              </Button>
+          </Card>
             )}
-          </motion.div>
-        )}
-
-        {/* Mobile bottom spacing */}
-        <div className="h-4 sm:h-0"></div>
       </div>
     </div>
   );

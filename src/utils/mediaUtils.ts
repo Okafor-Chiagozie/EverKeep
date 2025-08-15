@@ -1,51 +1,78 @@
+import { cloudinaryService } from '@/services/cloudinary';
+import { api, getStoredToken } from '@/lib/api';
+
 interface MediaEntry {
   id: string;
   title: string;
   cloudinaryUrl?: string;
   type: 'image' | 'video' | 'audio' | 'document';
+  publicId?: string;
 }
 
 export const mediaUtils = {
-  /**
-   * Download media file from Cloudinary URL
-   */
   async downloadMedia(entry: MediaEntry): Promise<void> {
-    if (!entry.cloudinaryUrl) {
+    const filename = entry.title || 'download';
+
+    // Prefer signed URL if we have publicId
+    let remoteUrl: string | undefined;
+    if (entry.publicId) {
+      const resource_type = entry.type === 'document' ? 'raw' : (entry.type as any);
+      remoteUrl = await cloudinaryService.getSignedDownloadUrl({
+        public_id: entry.publicId,
+        resource_type,
+        delivery_type: 'upload',
+        filename,
+      });
+    } else if (entry.cloudinaryUrl) {
+      // Build fl_attachment fallback
+      const sanitize = (name: string): string => name.replace(/[^a-zA-Z0-9._ -]/g, '_').trim() || 'download';
+      const safe = sanitize(filename);
+      const re = /(\/image|\/video|\/raw)\/upload\//;
+      remoteUrl = re.test(entry.cloudinaryUrl) && !entry.cloudinaryUrl.includes('/fl_attachment')
+        ? entry.cloudinaryUrl.replace(re, (m) => `${m}fl_attachment:${encodeURIComponent(safe)}/`)
+        : entry.cloudinaryUrl;
+    } else {
       throw new Error('No download URL available');
     }
 
-    try {
-      // For documents uploaded as 'raw', we need to construct the correct download URL
-      let downloadUrl = entry.cloudinaryUrl;
-      
-      // If it's a document and contains '/raw/upload/', add fl_attachment flag for proper download
-      if (entry.type === 'document' && entry.cloudinaryUrl.includes('/raw/upload/')) {
-        // Insert fl_attachment parameter to force download with correct headers
-        downloadUrl = entry.cloudinaryUrl.replace('/raw/upload/', '/raw/upload/fl_attachment/');
-      }
+    // Stream via backend proxy using Authorization header, then save as blob
+    const base = (api.defaults?.baseURL as string) || '/api/v1';
+    const proxyUrl = `${base}/media/download?url=${encodeURIComponent(remoteUrl)}&filename=${encodeURIComponent(filename)}`;
 
-      // Create a temporary link element
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = entry.title;
-      link.target = '_blank';
-      
-      // Append to body, click, and remove
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Download failed:', error);
-      throw error;
+    const token = getStoredToken?.();
+    const resp = await fetch(proxyUrl, {
+      method: 'GET',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      credentials: 'omit',
+    });
+
+    if (!resp.ok) {
+      // Fallback: navigate directly to remote URL
+      const a = document.createElement('a');
+      a.href = remoteUrl;
+      a.download = filename;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
     }
+
+    const blob = await resp.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
   },
 
-  /**
-   * Get file extension from filename
-   */
   getFileExtension(filename: string): string {
     const parts = filename.split('.');
-    return parts.length > 1 ? parts.pop()?.toLowerCase() || '' : '';
+    return parts.length > 1 ? parts.pop() || '' : '';
   },
 
   /**

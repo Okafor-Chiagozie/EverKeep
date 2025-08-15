@@ -13,6 +13,7 @@ export interface VaultEntry extends DatabaseRow {
   type: string;
   content: string | null;
   timestamp: string;
+  parent_id?: string | null;
 }
 
 export interface VaultItem extends DatabaseRow {
@@ -41,6 +42,7 @@ export interface CreateVaultEntryRequest {
   vault_id: string;
   type: string;
   content?: string;
+  parent_id?: string;
 }
 
 export interface CreateVaultItemRequest {

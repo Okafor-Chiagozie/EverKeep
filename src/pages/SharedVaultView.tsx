@@ -3,12 +3,13 @@ import { useParams } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Shield, Mail, AlertCircle, CheckCircle } from 'lucide-react'
+import { api } from '@/lib/api'
 
 export function SharedVaultView() {
   const { token } = useParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [vaultData, setVaultData] = useState(null)
+  const [vaultData, setVaultData] = useState<any>(null)
 
   useEffect(() => {
     const fetchVault = async () => {
@@ -21,23 +22,15 @@ export function SharedVaultView() {
           setLoading(false)
           return
         }
-        // Call the Supabase Edge Function
-        const res = await fetch(
-          'https://<YOUR-SUPABASE-PROJECT-URL>.functions.supabase.co/get-shared-vault',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token })
-          }
-        )
-        const data = await res.json()
-        if (!res.ok) {
-          setError(data.error || 'Invalid or expired share link')
+        // Call backend share verification endpoint
+        const { data } = await api.post('/vaults/share/verify', { token })
+        if (!data?.success) {
+          setError(data?.message || 'Invalid or expired share link')
         } else {
-          setVaultData(data)
+          setVaultData(data?.data)
         }
-      } catch (err) {
-        setError('Failed to validate share link')
+      } catch (err: any) {
+        setError(err?.response?.data?.message || 'Failed to validate share link')
       } finally {
         setLoading(false)
       }

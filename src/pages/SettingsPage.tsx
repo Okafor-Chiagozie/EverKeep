@@ -34,6 +34,16 @@ export function SettingsPage() {
     inactivity_threshold_days: 60
   });
 
+  // Local input state for months (allows empty while typing)
+  const [inactivityMonthsInput, setInactivityMonthsInput] = useState<string>('');
+  const [inactivityMonthsError, setInactivityMonthsError] = useState<string>('');
+
+  // Per-card banners
+  const [accountSuccess, setAccountSuccess] = useState('');
+  const [accountError, setAccountError] = useState('');
+  const [inactivitySuccess, setInactivitySuccess] = useState('');
+  const [inactivityError, setInactivityError] = useState('');
+
   // Track original values to detect changes
   const [originalData, setOriginalData] = useState({
     full_name: '',
@@ -59,6 +69,10 @@ export function SettingsPage() {
           };
           setFormData(userData);
           setOriginalData(userData);
+          // initialize months input from days
+          const months = Math.round(userData.inactivity_threshold_days / 30);
+          setInactivityMonthsInput(String(months));
+          setInactivityMonthsError('');
         } else {
           setError('Failed to load user profile');
         }
@@ -92,8 +106,8 @@ export function SettingsPage() {
     if (!authUser?.id || !userProfile || !hasAccountChanges()) return;
     
     setIsSaving(true);
-    setError('');
-    setSuccess('');
+    setAccountError('');
+    setAccountSuccess('');
     
     try {
       const response = await userService.updateUser(authUser.id, {
@@ -109,27 +123,27 @@ export function SettingsPage() {
           phone: response.data.phone || ''
         };
         setOriginalData(updatedData);
-        setSuccess('Account information saved successfully!');
+        setAccountSuccess('Account information saved successfully!');
         
         // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => setAccountSuccess(''), 3000);
       } else {
-        setError(response.errors[0]?.description || 'Failed to save account information');
+        setAccountError(response.errors[0]?.description || 'Failed to save account information');
       }
     } catch (err) {
       console.error('Error saving account info:', err);
-      setError('Failed to save account information');
+      setAccountError('Failed to save account information');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleSaveInactivitySettings = async () => {
-    if (!authUser?.id || !userProfile || !hasInactivityChanges()) return;
+    if (!authUser?.id || !userProfile || !hasInactivityChanges() || inactivityMonthsError || inactivityMonthsInput === '') return;
     
     setIsSaving(true);
-    setError('');
-    setSuccess('');
+    setInactivityError('');
+    setInactivitySuccess('');
     
     try {
       const response = await userService.updateUser(authUser.id, {
@@ -143,16 +157,20 @@ export function SettingsPage() {
           inactivity_threshold_days: response.data.inactivity_threshold_days || 60
         };
         setOriginalData(updatedData);
-        setSuccess('Inactivity settings saved successfully!');
+        setInactivitySuccess('Inactivity settings saved successfully!');
+        // sync months input
+        const months = Math.round((response.data.inactivity_threshold_days || 60) / 30);
+        setInactivityMonthsInput(String(months));
+        setInactivityMonthsError('');
         
         // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => setInactivitySuccess(''), 3000);
       } else {
-        setError(response.errors[0]?.description || 'Failed to save inactivity settings');
+        setInactivityError(response.errors[0]?.description || 'Failed to save inactivity settings');
       }
     } catch (err) {
       console.error('Error saving inactivity settings:', err);
-      setError('Failed to save inactivity settings');
+      setInactivityError('Failed to save inactivity settings');
     } finally {
       setIsSaving(false);
     }
@@ -161,15 +179,44 @@ export function SettingsPage() {
   // Convert days to months for display
   const inactivityMonths = Math.round(formData.inactivity_threshold_days / 30);
   
-  // Handle months input and convert to days
-  const handleMonthsChange = (months: number) => {
-    const days = Math.max(1, Math.min(365, months * 30)); // 1 day to 1 year max
+  // Handle months input and convert to days (only when valid)
+  const handleMonthsInputChange = (raw: string) => {
+    setInactivityMonthsInput(raw);
+
+    if (raw === '') {
+      setInactivityMonthsError('Please enter a value between 1 and 12');
+      return;
+    }
+
+    // allow only digits
+    const num = Number(raw);
+    if (!Number.isInteger(num)) {
+      setInactivityMonthsError('Value must be a whole number between 1 and 12');
+      return;
+    }
+    if (num < 1 || num > 12) {
+      setInactivityMonthsError('Value must be between 1 and 12');
+      return;
+    }
+
+    setInactivityMonthsError('');
+    const days = num * 30;
     handleInputChange('inactivity_threshold_days', days);
   };
 
   const clearMessage = () => {
     setError('');
     setSuccess('');
+  };
+
+  const clearAccountMessage = () => {
+    setAccountError('');
+    setAccountSuccess('');
+  };
+
+  const clearInactivityMessage = () => {
+    setInactivityError('');
+    setInactivitySuccess('');
   };
 
   // Check email verification status from auth user
@@ -194,7 +241,7 @@ export function SettingsPage() {
       <div className="px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-8 lg:mt-0 mt-16">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-between"
         >
@@ -209,39 +256,18 @@ export function SettingsPage() {
           </div>
         </motion.div>
 
-        {/* Success Message */}
-        {success && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Card className="p-3 bg-green-900/20 border-green-500/30">
-              <div className="flex items-center space-x-2 text-green-400">
-                <CheckCircle className="w-4 h-4" />
-                <p className="text-sm">{success}</p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearMessage}
-                  className="ml-auto text-green-400 hover:text-green-300"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Error Message */}
+        {/* Page-level error (e.g., load failure) */}
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
           >
             <Card className="p-3 bg-red-900/20 border-red-500/30">
-              <div className="flex items-center space-x-2 text-red-400">
-                <AlertCircle className="w-4 h-4" />
-                <p className="text-sm">{error}</p>
+              <div className="flex items-center">
+                <div className="flex items-center gap-2 text-red-400">
+                  <AlertCircle className="w-4 h-4" />
+                  <p className="text-sm">{error}</p>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -261,6 +287,38 @@ export function SettingsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
+          {/* Card-level banners */}
+          {accountSuccess && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+              <Card className="mb-3 p-3 bg-green-900/20 border-green-500/30">
+                <div className="flex items-center">
+                  <div className="flex items-center gap-2 text-green-400">
+                    <CheckCircle className="w-4 h-4" />
+                    <p className="text-sm">{accountSuccess}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={clearAccountMessage} className="ml-auto text-green-400 hover:text-green-300">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+          {accountError && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+              <Card className="mb-3 p-3 bg-red-900/20 border-red-500/30">
+                <div className="flex items-center">
+                  <div className="flex items-center gap-2 text-red-400">
+                    <AlertCircle className="w-4 h-4" />
+                    <p className="text-sm">{accountError}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={clearAccountMessage} className="ml-auto text-red-400 hover:text-red-300">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+
           <Card className="p-4 sm:p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center space-x-2">
@@ -368,6 +426,38 @@ export function SettingsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
+          {/* Card-level banners */}
+          {inactivitySuccess && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+              <Card className="mb-3 p-3 bg-green-900/20 border-green-500/30">
+                <div className="flex items-center">
+                  <div className="flex items-center gap-2 text-green-400">
+                    <CheckCircle className="w-4 h-4" />
+                    <p className="text-sm">{inactivitySuccess}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={clearInactivityMessage} className="ml-auto text-green-400 hover:text-green-300">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+          {inactivityError && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+              <Card className="mb-3 p-3 bg-red-900/20 border-red-500/30">
+                <div className="flex items-center">
+                  <div className="flex items-center gap-2 text-red-400">
+                    <AlertCircle className="w-4 h-4" />
+                    <p className="text-sm">{inactivityError}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={clearInactivityMessage} className="ml-auto text-red-400 hover:text-red-300">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+
           <Card className="p-4 sm:p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center space-x-2">
@@ -376,7 +466,7 @@ export function SettingsPage() {
               </h3>
               <Button
                 onClick={handleSaveInactivitySettings}
-                disabled={isSaving || !hasInactivityChanges()}
+                disabled={isSaving || !hasInactivityChanges() || Boolean(inactivityMonthsError) || inactivityMonthsInput === ''}
                 className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2"
               >
                 {isSaving ? (
@@ -416,13 +506,13 @@ export function SettingsPage() {
                     type="number"
                     min="1"
                     max="12"
-                    value={inactivityMonths}
-                    onChange={(e) => {
-                      const months = parseInt(e.target.value) || 1;
-                      handleMonthsChange(Math.max(1, Math.min(12, months)));
-                    }}
+                    value={inactivityMonthsInput}
+                    onChange={(e) => handleMonthsInputChange(e.target.value)}
                     className="bg-slate-800/50 border-slate-600 text-white"
                   />
+                  {inactivityMonthsError && (
+                    <p className="text-xs text-red-400">{inactivityMonthsError}</p>
+                  )}
                   <div className="text-xs text-slate-400 space-y-1">
                     <p>
                       Your vault will be delivered to recipients if you don't log in for {formData.inactivity_threshold_days} days

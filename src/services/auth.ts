@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { api, setStoredToken } from '@/lib/api';
 import {
   LoginRequest,
   RegisterRequest,
@@ -6,192 +6,101 @@ import {
   AuthUser
 } from '@/types/auth';
 import { StandardApiResponse } from '@/types/common';
-import { NotificationHelper } from '@/utils/notificationHelper';
-
-interface LoginMetadata {
-  ipAddress?: string;
-  userAgent?: string;
-  location?: string;
-}
 
 export const authService = {
-  async login(credentials: LoginRequest, metadata?: LoginMetadata): Promise<LoginResponse> {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.email,
-      password: credentials.password
-    });
-
-    if (error) {
+  async login(credentials: LoginRequest): Promise<LoginResponse> {
+    try {
+      const { data } = await api.post('/auth/login', credentials);
+      const token = data?.data?.token as string;
+      const user = data?.data?.user as AuthUser;
+      if (token) setStoredToken(token);
+      return {
+        data: { user, session: null as any },
+        isSuccessful: true,
+        errors: [],
+        responseMessage: 'Login successful',
+        responseCode: 'SUCCESS'
+      };
+    } catch (error: any) {
       return {
         data: null,
         isSuccessful: false,
-        errors: [{ field: 'auth', description: error.message }],
+        errors: [{ field: 'auth', description: error?.response?.data?.message || 'Login failed' }],
         responseMessage: 'Login failed',
         responseCode: 'AUTH_ERROR'
       };
     }
-
-    const response: LoginResponse = {
-      data: {
-        user: data.user as AuthUser,
-        session: data.session
-      },
-      isSuccessful: true,
-      errors: [],
-      responseMessage: 'Login successful',
-      responseCode: 'SUCCESS'
-    };
-
-    // 🔥 Log activity - Successful Login
-    if (data.user) {
-      try {
-        await NotificationHelper.logLogin(
-          data.user.id,
-          metadata?.ipAddress,
-          metadata?.userAgent,
-          metadata?.location
-        );
-      } catch (logError) {
-        console.warn('Failed to log login activity:', logError);
-      }
-    }
-
-    return response;
   },
 
   async register(userData: RegisterRequest): Promise<StandardApiResponse<AuthUser>> {
-    const { data, error } = await supabase.auth.signUp({
+    try {
+      const { data } = await api.post('/auth/register', {
       email: userData.email,
       password: userData.password,
-      options: {
-        data: {
+        fullName: userData.full_name,
           phone: userData.phone,
-          full_name: userData.full_name
-        }
-      }
-    });
-
-    if (error) {
+      });
+      const user = data?.data?.user as AuthUser;
+      const token = data?.data?.token as string;
+      if (token) setStoredToken(token);
+      return {
+        data: user,
+        isSuccessful: true,
+        errors: [],
+        responseMessage: 'Registration successful',
+        responseCode: 'SUCCESS'
+      } as any;
+    } catch (error: any) {
       return {
         data: null,
         isSuccessful: false,
-        errors: [{ field: 'auth', description: error.message }],
+        errors: [{ field: 'auth', description: error?.response?.data?.message || 'Registration failed' }],
         responseMessage: 'Registration failed',
         responseCode: 'AUTH_ERROR'
-      };
+      } as any;
     }
-
-    const user = data.user as AuthUser;
-
-    // 🔥 Log activity - Account Created
-    if (user) {
-      try {
-        await NotificationHelper.logActivity(
-          user.id,
-          'system_event',
-          {
-            title: 'Account created',
-            description: 'Welcome! Your EverKeep account has been created successfully.',
-            metadata: {
-              email: user.email,
-              fullName: userData.full_name
-            }
-          }
-        );
-      } catch (logError) {
-        console.warn('Failed to log registration activity:', logError);
-      }
-    }
-
-    return {
-      data: user,
-      isSuccessful: true,
-      errors: [],
-      responseMessage: 'Registration successful',
-      responseCode: 'SUCCESS'
-    };
   },
 
   async logout(): Promise<StandardApiResponse<null>> {
-    // Get current user before logout for logging
-    const { data: { user } } = await supabase.auth.getUser();
-
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
+    try {
+      await api.post('/auth/logout');
+      setStoredToken(null);
+      return {
+        data: null,
+        isSuccessful: true,
+        errors: [],
+        responseMessage: 'Logout successful',
+        responseCode: 'SUCCESS'
+      };
+    } catch (error: any) {
       return {
         data: null,
         isSuccessful: false,
-        errors: [{ field: 'auth', description: error.message }],
+        errors: [{ field: 'auth', description: error?.response?.data?.message || 'Logout failed' }],
         responseMessage: 'Logout failed',
         responseCode: 'AUTH_ERROR'
       };
     }
-
-    // 🔥 Log activity - Logout
-    if (user) {
-      try {
-        await NotificationHelper.logActivity(
-          user.id,
-          'system_event',
-          {
-            title: 'Account logged out',
-            description: 'User session ended successfully',
-            metadata: {
-              logoutTime: new Date().toISOString()
-            }
-          }
-        );
-      } catch (logError) {
-        console.warn('Failed to log logout activity:', logError);
-      }
-    }
-
-    return {
-      data: null,
-      isSuccessful: true,
-      errors: [],
-      responseMessage: 'Logout successful',
-      responseCode: 'SUCCESS'
-    };
   },
 
   async getCurrentUser(): Promise<StandardApiResponse<AuthUser | null>> {
-    const { data: { user }, error } = await supabase.auth.getUser();
-
-    if (error) {
+    try {
+      const { data } = await api.get('/auth/me');
+      return {
+        data: data?.data as AuthUser,
+        isSuccessful: true,
+        errors: [],
+        responseMessage: 'User retrieved successfully',
+        responseCode: 'SUCCESS'
+      };
+    } catch (error: any) {
       return {
         data: null,
         isSuccessful: false,
-        errors: [{ field: 'auth', description: error.message }],
-        responseMessage: 'Failed to get current user',
+        errors: [{ field: 'auth', description: 'Not authenticated' }],
+        responseMessage: 'Not authenticated',
         responseCode: 'AUTH_ERROR'
       };
     }
-
-    return {
-      data: user as AuthUser,
-      isSuccessful: true,
-      errors: [],
-      responseMessage: 'User retrieved successfully',
-      responseCode: 'SUCCESS'
-    };
   },
-
-  // Utility method to get client metadata for logging
-  getClientMetadata(): LoginMetadata {
-    try {
-      const metadata: LoginMetadata = {
-        userAgent: navigator?.userAgent,
-        ipAddress: undefined, // This would need to be provided by your backend
-        location: undefined   // This would need geolocation or IP-based detection
-      };
-
-      // You can enhance this with additional client detection
-      return metadata;
-    } catch (error) {
-      console.warn('Failed to get client metadata:', error);
-      return {};
-    }
-  }
 };

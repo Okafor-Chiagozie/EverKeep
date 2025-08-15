@@ -44,20 +44,17 @@ export function VaultMessagesTab({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-resize textarea
+  // Auto-resize textarea up to 10 lines
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      const minHeight = 40;
-      const maxHeight = 120;
-      
+      const styles = window.getComputedStyle(textarea);
+      const lineHeight = parseFloat(styles.lineHeight || '20');
+      const maxHeight = lineHeight * 10;
       textarea.style.height = 'auto';
-      const scrollHeight = textarea.scrollHeight;
-      const newHeight = Math.min(Math.max(scrollHeight + 4, minHeight), maxHeight);
-      const finalHeight = scrollHeight > maxHeight - 4 ? maxHeight : newHeight;
-      
-      textarea.style.height = `${finalHeight}px`;
-      setTextareaHeight(finalHeight);
+      const next = Math.min(textarea.scrollHeight, maxHeight);
+      textarea.style.height = `${next}px`;
+      setTextareaHeight(next);
     }
   }, [newMessage, setTextareaHeight]);
 
@@ -117,8 +114,8 @@ export function VaultMessagesTab({
                 {/* 🔥 FIXED: Message bubble with proper overflow handling */}
                 <div className="max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] xl:max-w-[65%] bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl rounded-tr-md p-4 min-w-0">
                   <div className="text-white">
-                    {/* 🔥 FIXED: Text content with proper word breaking */}
-                    <p className="text-base leading-relaxed break-words overflow-wrap-anywhere hyphens-auto">
+                    {/* 🔥 FIXED: Text content clamped to 10 lines */}
+                    <p className="text-base leading-relaxed break-words overflow-wrap-anywhere hyphens-auto whitespace-pre-wrap line-clamp-10">
                       {entry.content}
                     </p>
                   </div>
@@ -144,7 +141,7 @@ export function VaultMessagesTab({
       <div className="p-4 bg-slate-800/20 flex-shrink-0">
         <div className="flex items-end space-x-3">
           <div className="flex-1 min-w-0">
-            {/* 🔥 FIXED: Textarea with proper overflow handling */}
+            {/* 🔥 FIXED: Textarea with proper overflow handling and 10-line max */}
             <textarea
               ref={textareaRef}
               placeholder="Write a message..."
@@ -153,14 +150,7 @@ export function VaultMessagesTab({
               onKeyDown={onKeyDown}
               disabled={sendingMessage}
               className="w-full bg-slate-800/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 break-words overflow-wrap-anywhere"
-              style={{
-                height: `${textareaHeight}px`,
-                minHeight: '40px',
-                maxHeight: '120px',
-                overflowY: textareaHeight >= 120 ? 'auto' : 'hidden',
-                wordBreak: 'break-word',
-                overflowWrap: 'anywhere'
-              }}
+              style={{ height: `${textareaHeight}px`, overflowY: 'auto' }}
               rows={1}
             />
           </div>
@@ -180,38 +170,13 @@ export function VaultMessagesTab({
 
       {/* 🔥 ADDED: Custom CSS for better text wrapping */}
       <style jsx>{`
-        .break-words {
-          word-break: break-word;
-          overflow-wrap: anywhere;
-          hyphens: auto;
-        }
-        
-        .overflow-wrap-anywhere {
-          overflow-wrap: anywhere;
-        }
-        
-        .hyphens-auto {
-          hyphens: auto;
-        }
-        
-        /* Custom scrollbar for messages area */
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(51, 65, 85, 0.3);
-          border-radius: 3px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(148, 163, 184, 0.5);
-          border-radius: 3px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(148, 163, 184, 0.7);
-        }
+        .break-words { word-break: break-word; overflow-wrap: anywhere; hyphens: auto; }
+        .overflow-wrap-anywhere { overflow-wrap: anywhere; }
+        .hyphens-auto { hyphens: auto; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(51, 65, 85, 0.3); border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.5); border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.7); }
       `}</style>
     </>
   );

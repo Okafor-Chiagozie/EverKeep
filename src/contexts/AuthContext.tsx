@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { authService } from '@/services/auth';
 import { AuthUser } from '@/types/auth';
+import { getStoredToken } from '@/lib/api';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -26,6 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (savedUser) {
           const userData = JSON.parse(savedUser);
           setUser(userData);
+        }
+
+        // If no token, skip calling server
+        const token = getStoredToken();
+        if (!token) {
+          setLoading(false);
+          return;
         }
 
         // Then verify with server

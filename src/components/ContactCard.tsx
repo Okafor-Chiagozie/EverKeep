@@ -28,34 +28,7 @@ interface ContactCardProps {
 }
 
 export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: ContactCardProps) {
-  const getRelationshipIcon = (role: string) => {
-    switch (role) {
-      case 'family': return Home;
-      case 'friend': return Heart;
-      case 'colleague': return Briefcase;
-      default: return Users;
-    }
-  };
-
-  const getRelationshipColor = (role: string) => {
-    switch (role) {
-      case 'family': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'friend': return 'bg-pink-500/20 text-pink-400 border-pink-500/30';
-      case 'colleague': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
-    }
-  };
-
-  const getRelationshipLabel = (role: string) => {
-    switch (role) {
-      case 'family': return 'Family';
-      case 'friend': return 'Friend';
-      case 'colleague': return 'Colleague';
-      default: return 'Other';
-    }
-  };
-
-  const getAvatarColor = (index: number) => {
+  const getAvatarColor = (idx: number) => {
     const colors = [
       'from-blue-500 to-blue-600',
       'from-purple-500 to-purple-600',
@@ -66,7 +39,36 @@ export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: Co
       'from-indigo-500 to-indigo-600',
       'from-teal-500 to-teal-600'
     ];
-    return colors[index % colors.length];
+    return colors[idx % colors.length];
+  };
+
+  const getRelationshipIcon = (role?: string) => {
+    switch (role) {
+      case 'family': return Heart;
+      case 'friend': return Users;
+      case 'colleague': return Briefcase;
+      case 'home': return Home;
+      default: return Users;
+    }
+  };
+
+  const getRelationshipColor = (role?: string) => {
+    switch (role) {
+      case 'family': return 'bg-pink-500/20 text-pink-300 border-pink-500/30';
+      case 'friend': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+      case 'colleague': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'home': return 'bg-green-500/20 text-green-300 border-green-500/30';
+      default: return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+    }
+  };
+
+  const getRelationshipLabel = (role: string) => {
+    switch (role) {
+      case 'family': return 'Family';
+      case 'friend': return 'Friend';
+      case 'colleague': return 'Colleague';
+      default: return 'Other';
+    }
   };
 
   const RelationshipIcon = getRelationshipIcon(contact.role);
@@ -92,33 +94,26 @@ export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: Co
               <h3 className="font-semibold text-white text-base truncate">{contact.name}</h3>
               <Badge className={`${getRelationshipColor(contact.role)} border text-xs mt-1`}>
                 <RelationshipIcon className="w-3 h-3 mr-1" />
-                {getRelationshipLabel(contact.role)}
+                {contact.role ?? 'Other'}
               </Badge>
             </div>
           </div>
-          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="p-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex-shrink-0"
+                className="p-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 data-[state=open]:opacity-100 transition-opacity flex-shrink-0"
               >
                 <MoreVertical className="w-4 h-4 text-slate-400" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
-              <DropdownMenuItem 
-                className="text-slate-300 hover:bg-slate-700"
-                onClick={() => onEdit(contact)}
-              >
+            <DropdownMenuContent align="end" className="bg-slate-900 border-slate-700">
+              <DropdownMenuItem onClick={() => onEdit(contact)} className="text-slate-300 focus:bg-slate-800">
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Contact
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="text-red-400 hover:bg-red-900/20"
-                onClick={() => onDelete(contact)}
-              >
+              <DropdownMenuItem onClick={() => onDelete(contact)} className="text-red-400 focus:bg-red-900/20">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete Contact
               </DropdownMenuItem>
@@ -132,12 +127,10 @@ export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: Co
             <Mail className="w-4 h-4 flex-shrink-0" />
             <span className="truncate">{contact.email}</span>
           </div>
-          {contact.phone && (
-            <div className="flex items-center space-x-2 text-sm text-slate-400">
-              <Phone className="w-4 h-4 flex-shrink-0" />
-              <span>{contact.phone}</span>
-            </div>
-          )}
+          <div className="flex items-center space-x-2 text-sm text-slate-400">
+            <Phone className="w-4 h-4 flex-shrink-0" />
+            <span>{contact.phone && contact.phone.trim() !== '' ? contact.phone : 'No phone number'}</span>
+          </div>
         </div>
 
         {/* Vault Assignment Info */}
