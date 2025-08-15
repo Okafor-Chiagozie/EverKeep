@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Shield, Mail, AlertCircle, CheckCircle } from 'lucide-react'
+import { Shield, AlertCircle } from 'lucide-react'
 import { api } from '@/lib/api'
 
 export function SharedVaultView() {

@@ -3,18 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useParams } from 'react-router-dom';
 import { 
   Shield, 
-  Lock, 
   Key, 
   CheckCircle, 
-  AlertCircle,
   Download,
-  Eye,
-  EyeOff,
   Heart,
   FileText,
   Image,
   Video,
-  Mic,
   Calendar,
   User
 } from 'lucide-react';

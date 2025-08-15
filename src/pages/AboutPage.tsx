@@ -4,17 +4,11 @@ import {
   Heart, 
   Users, 
   Globe,
-  Award,
   Target,
-  Eye,
-  Zap,
-  Lock,
   CheckCircle,
-  Star,
   Quote
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 export function AboutPage() {

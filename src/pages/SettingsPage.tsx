@@ -25,7 +25,7 @@ export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+
   
   // Form state
   const [formData, setFormData] = useState({
@@ -206,7 +206,7 @@ export function SettingsPage() {
 
   const clearMessage = () => {
     setError('');
-    setSuccess('');
+
   };
 
   const clearAccountMessage = () => {
@@ -221,8 +221,7 @@ export function SettingsPage() {
 
   // Check email verification status from auth user
   const isEmailVerified = () => {
-    return authUser?.user_metadata?.email_verified === true || 
-           authUser?.email_confirmed_at !== null;
+    return authUser?.isVerified === true;
   };
 
   if (isLoading) {

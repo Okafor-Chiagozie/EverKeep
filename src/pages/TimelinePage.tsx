@@ -5,7 +5,6 @@ import {
   Shield, 
   Users, 
   FileText, 
-  CheckCircle, 
   AlertCircle,
   Key,
   Calendar,

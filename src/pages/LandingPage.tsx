@@ -34,10 +34,7 @@ export function LandingPage() {
     setShowAuthModal(true);
   };
 
-  const handleSignInClick = () => {
-    setAuthMode('login');
-    setShowAuthModal(true);
-  };
+
 
   const features = [
     {

@@ -14,7 +14,7 @@ export interface RegisterRequest {
 
 export interface LoginResponse extends StandardApiResponse<{
   user: AuthUser;
-  session: Session;
+  session: Session | null;
 }> {}
 
 export interface AuthUser {

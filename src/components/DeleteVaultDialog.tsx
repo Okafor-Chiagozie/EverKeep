@@ -4,9 +4,6 @@ import {
   AlertTriangle,
   Trash2,
   Shield,
-  FileText,
-  Image,
-  Users,
   Loader2,
   CheckCircle,
   AlertCircle,
@@ -16,7 +13,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';

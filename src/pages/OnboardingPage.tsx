@@ -67,7 +67,7 @@ export function OnboardingPage() {
   const [contactEmail, setContactEmail] = useState('');
   const [vaultName, setVaultName] = useState('');
   
-  const { updateUser } = useAuth();
+  const { user, setUser } = useAuth();
   const navigate = useNavigate();
 
   const handleNext = async () => {
@@ -80,7 +80,8 @@ export function OnboardingPage() {
     
     if (currentStep === steps.length) {
       // Complete onboarding
-      updateUser({ 
+      setUser({ 
+        ...user,
         isOnboarded: true, 
         deadmanTrigger: parseInt(deadmanDays),
         encryptionKey: 'generated-key-hash'

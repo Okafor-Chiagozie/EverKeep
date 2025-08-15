@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Image,
@@ -32,7 +32,6 @@ interface VaultMediaTabProps {
   mediaEntries: LocalVaultEntry[];
   onDeleteMedia: (mediaId: string) => void;
   onDownloadMedia: (entry: LocalVaultEntry) => void;
-  onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   uploadingFiles: boolean;
   deletingItems?: Set<string>;
@@ -42,7 +41,6 @@ export function VaultMediaTab({
   mediaEntries,
   onDeleteMedia,
   onDownloadMedia,
-  onFileUpload,
   fileInputRef,
   uploadingFiles,
   deletingItems = new Set()

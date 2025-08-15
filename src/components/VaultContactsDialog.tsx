@@ -6,7 +6,6 @@ import {
   Search, 
   X,
   CheckCircle,
-  User,
   Trash2,
   UserPlus,
   UserCheck,
@@ -34,9 +33,7 @@ interface VaultContactsDialogProps {
   onOpenChange: (open: boolean) => void;
   vaultId: string;
   vaultName: string;
-  vault: Vault;
   contacts: Contact[];
-  onVaultUpdated: (vault: Vault) => void;
   onRecipientsChanged?: () => void; // New callback for recipient changes
 }
 
@@ -45,9 +42,7 @@ export function VaultContactsDialog({
   onOpenChange, 
   vaultId, 
   vaultName, 
-  vault,
   contacts,
-  onVaultUpdated,
   onRecipientsChanged
 }: VaultContactsDialogProps) {
   const [searchQuery, setSearchQuery] = useState('');

@@ -1,22 +1,13 @@
 {
-   "files": [],
-   "references": [
-     { "path": "./tsconfig.app.json" },
-     { "path": "./tsconfig.node.json" }
-   ],
-   "compilerOptions": {
-     "baseUrl": ".",
-     "paths": {
-       "@/*": ["./src/*"]
-     },
- 
-     // TEMPORARY FIX — make build not fail for unused vars
-     "noUnusedLocals": false,
-     "noUnusedParameters": false,
- 
-     // Let build succeed even with type errors (temporary)
-     "noEmitOnError": false,
-     "skipLibCheck": true
-   }
- }
- 
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}

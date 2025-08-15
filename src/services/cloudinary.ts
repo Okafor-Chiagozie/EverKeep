@@ -8,6 +8,7 @@ interface CloudinaryUploadResponse {
   width?: number;
   height?: number;
   duration?: number;
+  format?: string;
 }
 
 export const cloudinaryService = {

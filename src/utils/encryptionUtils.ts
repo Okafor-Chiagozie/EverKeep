@@ -172,7 +172,7 @@ export class EncryptionUtils {
   /**
    * Decrypt content using share token (simplified approach)
    */
-  static decryptWithShareToken(encryptedContent: string, token: string, userId: string, vaultId: string): string {
+  static decryptWithShareToken(encryptedContent: string, userId: string, vaultId: string): string {
     try {
       // For simplicity, we'll use the same key generation
       // In production, you might want a separate share key system

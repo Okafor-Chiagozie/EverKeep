@@ -12,7 +12,7 @@ export interface ApiError {
 }
 
 export interface StandardApiResponse<T = any> {
-  data: T;
+  data: T | null;
   isSuccessful: boolean;
   errors: ApiError[];
   responseMessage: string;

@@ -2,21 +2,16 @@ import { api } from '@/lib/api';
 import {
   Vault,
   VaultEntry,
-  VaultItem,
   VaultRecipient,
   CreateVaultRequest,
   UpdateVaultRequest,
-  CreateVaultEntryRequest,
-  CreateVaultItemRequest,
   AddVaultRecipientRequest,
   GetVaultsRequest,
   GetVaultsResponse,
   GetVaultByIdResponse,
   GetVaultEntriesResponse,
-  GetVaultItemsResponse,
   GetVaultRecipientsResponse,
-  CreateVaultResponse,
-  InactiveVaultResult
+  CreateVaultResponse
 } from '@/types/vault';
 import { StandardApiResponse } from '@/types/common';
 import EncryptionUtils from '@/utils/encryptionUtils';
@@ -128,7 +123,7 @@ export const vaultService = {
    }
    },
 
-  async createVault(userId: string, vaultData: CreateVaultRequest): Promise<CreateVaultResponse> {
+  async createVault(vaultData: CreateVaultRequest): Promise<CreateVaultResponse> {
     try {
       // Encrypt vault name/description on client before sending (optional; server will also encrypt)
       const payload: any = { ...vaultData };
@@ -290,28 +285,28 @@ export const vaultService = {
       }
 
       // Step 2: Delete vault entries
-      const { error: deleteEntriesError } = await api.delete(`/vaults/${vaultId}/entries`);
-
-      if (deleteEntriesError) {
+      try {
+        await api.delete(`/vaults/${vaultId}/entries`);
+      } catch (deleteEntriesError: any) {
          console.error('❌ Failed to delete vault entries:', deleteEntriesError);
          return {
          data: null,
          isSuccessful: false,
-         errors: [{ field: 'vault_entries', description: deleteEntriesError.message }],
+         errors: [{ field: 'vault_entries', description: deleteEntriesError?.response?.data?.message || 'Failed to delete vault entries' }],
          responseMessage: 'Failed to delete vault entries',
          responseCode: 'DELETE_ERROR'
          };
       }
 
       // Step 6: Delete the vault itself
-      const { error: deleteVaultError } = await api.delete(`/vaults/${vaultId}`);
-
-      if (deleteVaultError) {
+      try {
+        await api.delete(`/vaults/${vaultId}`);
+      } catch (deleteVaultError: any) {
          console.error('❌ Failed to delete vault:', deleteVaultError);
          return {
          data: null,
          isSuccessful: false,
-         errors: [{ field: 'vault', description: deleteVaultError.message }],
+         errors: [{ field: 'vault', description: deleteVaultError?.response?.data?.message || 'Failed to delete vault' }],
          responseMessage: 'Failed to delete vault',
          responseCode: 'DELETE_ERROR'
          };
@@ -347,68 +342,57 @@ export const vaultService = {
 
    // Also add the missing updateVault method if it doesn't exist
    async updateVault(vaultId: string, vaultData: UpdateVaultRequest): Promise<StandardApiResponse<Vault>> {
-   try {
-      // Get current vault data for encryption
-      const { data: currentVault, error: fetchError } = await api.get(`/vaults/${vaultId}`);
-
-      if (fetchError || !currentVault) {
+     try {
+       // Get current vault data for encryption
+       const { data: currentVault } = await api.get(`/vaults/${vaultId}`);
+       if (!currentVault) {
          return {
-         data: null,
-         isSuccessful: false,
-         errors: [{ field: 'vault', description: 'Vault not found' }],
-         responseMessage: 'Vault not found',
-         responseCode: 'NOT_FOUND'
+           data: null,
+           isSuccessful: false,
+           errors: [{ field: 'vault', description: 'Vault not found' }],
+           responseMessage: 'Vault not found',
+           responseCode: 'NOT_FOUND'
          };
-      }
+       }
 
-      // Encrypt the updated data
-      const encryptedData: any = {};
-      
-      if (vaultData.name) {
+       // Encrypt the updated data
+       const encryptedData: any = {};
+       
+       if (vaultData.name) {
          encryptedData.name = EncryptionUtils.encryptText(vaultData.name, currentVault.data.user_id, vaultId);
-      }
-      
-      if (vaultData.description) {
+       }
+       
+       if (vaultData.description) {
          encryptedData.description = EncryptionUtils.encryptText(vaultData.description, currentVault.data.user_id, vaultId);
-      }
+       }
 
-      // Update the vault
-      const { data, error } = await api.put(`/vaults/${vaultId}`, encryptedData);
+       // Update the vault
+       const { data } = await api.put(`/vaults/${vaultId}`, encryptedData);
 
-      if (error) {
-         return {
-         data: null,
-         isSuccessful: false,
-         errors: [{ field: 'vault', description: error.message }],
-         responseMessage: 'Failed to update vault',
-         responseCode: 'UPDATE_ERROR'
-         };
-      }
-
-      // Return decrypted data to client
-      const decryptedVault = {
+       // Return decrypted data to client
+       const decryptedVault = {
          ...data,
          name: vaultData.name || EncryptionUtils.safeDecrypt(data.name, currentVault.data.user_id, vaultId),
          description: vaultData.description || (data.description ? EncryptionUtils.safeDecrypt(data.description, currentVault.data.user_id, vaultId) : null)
-      };
+       };
 
-      return {
+       return {
          data: decryptedVault as Vault,
          isSuccessful: true,
          errors: [],
          responseMessage: 'Vault updated successfully',
          responseCode: 'SUCCESS'
-      };
+       };
 
-   } catch (error) {
-      console.error('Error updating vault:', error);
-      return {
+     } catch (error: any) {
+       console.error('Error updating vault:', error);
+       return {
          data: null,
          isSuccessful: false,
          errors: [{ field: 'vault', description: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}` }],
          responseMessage: 'Failed to update vault',
          responseCode: 'UNEXPECTED_ERROR'
-      };
+       };
+     }
    }
-   },
 };

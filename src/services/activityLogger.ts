@@ -98,9 +98,7 @@ export const activityLogger = {
       return authService.getCurrentUser();
     },
 
-    getClientMetadata() {
-      return authService.getClientMetadata();
-    }
+
   },
 
   // Stubbed client-side logging methods (no-op to avoid duplicates)

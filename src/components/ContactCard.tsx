@@ -62,14 +62,7 @@ export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: Co
     }
   };
 
-  const getRelationshipLabel = (role: string) => {
-    switch (role) {
-      case 'family': return 'Family';
-      case 'friend': return 'Friend';
-      case 'colleague': return 'Colleague';
-      default: return 'Other';
-    }
-  };
+
 
   const RelationshipIcon = getRelationshipIcon(contact.role);
 

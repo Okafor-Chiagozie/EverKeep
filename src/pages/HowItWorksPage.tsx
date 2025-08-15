@@ -9,10 +9,8 @@ import {
   Lock,
   CheckCircle,
   ArrowRight,
-  FileText,
   Users,
   Mail,
-  Smartphone,
   Globe,
   Zap
 } from 'lucide-react';

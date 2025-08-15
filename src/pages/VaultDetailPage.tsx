@@ -8,7 +8,6 @@ import {
   ArrowLeft, 
   Settings, 
   MessageSquare,
-  Image,
   AlertCircle,
   Loader2,
   X,
@@ -28,8 +27,6 @@ import EncryptionUtils from '@/utils/encryptionUtils'; // 🔥 IMPORTANT: Import
 import { VaultContactsDialog } from '@/components/VaultContactsDialog';
 import { DeleteVaultDialog } from '@/components/DeleteVaultDialog';
 import { VaultSidebar } from '@/components/VaultSidebar';
-import { VaultMessagesTab } from '@/components/VaultMessagesTab';
-import { VaultMediaTab } from '@/components/VaultMediaTab';
 import { Vault, VaultEntry } from '@/types/vault';
 import { Contact } from '@/types/contact';
 import { EditableMessage } from '@/components/EditableMessage';
@@ -72,7 +69,7 @@ export function VaultDetailPage() {
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [deletingItems, setDeletingItems] = useState<Set<string>>(new Set());
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [pendingUploads, setPendingUploads] = useState<boolean>(false);
+
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const feedEndRef = useRef<HTMLDivElement>(null);
@@ -293,7 +290,7 @@ export function VaultDetailPage() {
 
       // 2) If there are pending files, upload and create entries with parent_id
       if (pendingFiles.length > 0) {
-        setPendingUploads(true);
+
         for (const file of pendingFiles) {
           try {
             const cloudinaryResponse = await cloudinaryService.uploadFile(file);
@@ -321,7 +318,7 @@ export function VaultDetailPage() {
             setError('One or more attachments failed to upload');
           }
         }
-        setPendingUploads(false);
+
         setPendingFiles([]);
       }
 
@@ -496,7 +493,7 @@ export function VaultDetailPage() {
 
   const attachFileToMessage = async (file: File, parentMessageId: string) => {
     setPendingFiles(prev => [...prev, file]);
-    setPendingUploads(true);
+    
 
     try {
       const cloudinaryResponse = await cloudinaryService.uploadFile(file);
@@ -526,7 +523,7 @@ export function VaultDetailPage() {
       console.error('Error attaching file to message:', e);
       setError('Failed to attach file to message');
     } finally {
-      setPendingUploads(false);
+      
       setPendingFiles(prev => prev.filter(f => f.name !== file.name));
     }
   };

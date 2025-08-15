@@ -5,7 +5,7 @@ import {
   GetUserByIdResponse,
   UpdateUserResponse
 } from '@/types/user';
-import { StandardApiResponse } from '@/types/common';
+
 
 export const userService = {
   async getUserById(userId: string): Promise<GetUserByIdResponse> {

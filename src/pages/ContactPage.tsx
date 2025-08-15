@@ -352,8 +352,8 @@ export function ContactPage() {
                 </h3>
                 
                 <div className="space-y-6">
-                  {offices.map((office, index) => (
-                    <div key={index} className="border-b border-slate-700/50 last:border-b-0 pb-4 last:pb-0">
+                  {offices.map((office) => (
+                    <div key={office.city} className="border-b border-slate-700/50 last:border-b-0 pb-4 last:pb-0">
                       <h4 className="font-semibold text-white mb-2">{office.city}</h4>
                       <div className="text-slate-400 text-sm space-y-1">
                         <div>{office.address}</div>

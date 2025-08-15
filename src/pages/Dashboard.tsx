@@ -91,7 +91,6 @@ export function Dashboard() {
 
   // Calculate stats
   const totalVaults = vaults.length;
-  const verifiedContacts = contacts.filter(contact => contact.verified).length;
   const unverifiedContacts = contacts.filter(contact => !contact.verified).length;
 
   const quickActions = [
@@ -261,7 +260,7 @@ export function Dashboard() {
               </h3>
               
               <div className="space-y-2 sm:space-y-3">
-                {quickActions.map((action, index) => (
+                {quickActions.map((action) => (
                   <motion.div
                     key={action.title}
                     whileHover={{ scale: 1.02 }}

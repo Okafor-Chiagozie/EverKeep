@@ -169,7 +169,7 @@ export function VaultMessagesTab({
       </div>
 
       {/* 🔥 ADDED: Custom CSS for better text wrapping */}
-      <style jsx>{`
+      <style>{`
         .break-words { word-break: break-word; overflow-wrap: anywhere; hyphens: auto; }
         .overflow-wrap-anywhere { overflow-wrap: anywhere; }
         .hyphens-auto { hyphens: auto; }

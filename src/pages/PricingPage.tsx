@@ -3,14 +3,8 @@ import {
   Shield, 
   Check, 
   Star,
-  Zap,
   Crown,
   Users,
-  Clock,
-  Lock,
-  FileText,
-  Video,
-  Smartphone,
   Headphones,
   ArrowRight
 } from 'lucide-react';
