@@ -48,6 +48,18 @@ interface LocalVaultEntry {
   cloudinaryUrl?: string;
 }
 
+// Interface for recipient contacts (subset of Contact)
+interface RecipientContact {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  relationship?: string;
+  isVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export function VaultDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -63,7 +75,7 @@ export function VaultDetailPage() {
   const [vault, setVault] = useState<Vault | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [vaultEntries, setVaultEntries] = useState<VaultEntry[]>([]);
-  const [recipients, setRecipients] = useState<Contact[]>([]);
+  const [recipients, setRecipients] = useState<RecipientContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -114,7 +126,7 @@ export function VaultDetailPage() {
       
       if (recipientsResponse.isSuccessful && recipientsResponse.data) {
         // Extract contact data from recipients
-        const recipientContacts = recipientsResponse.data
+        const recipientContacts: RecipientContact[] = recipientsResponse.data
           .filter(recipient => recipient.contact) // Only include recipients with contact data
           .map(recipient => ({
             id: recipient.contact!.id,
@@ -171,7 +183,7 @@ export function VaultDetailPage() {
 
         if (recipientsResponse.isSuccessful && recipientsResponse.data) {
           // Extract contact data from recipients
-          const recipientContacts = recipientsResponse.data
+          const recipientContacts: RecipientContact[] = recipientsResponse.data
             .filter(recipient => recipient.contact) // Only include recipients with contact data
             .map(recipient => ({
               id: recipient.contact!.id,

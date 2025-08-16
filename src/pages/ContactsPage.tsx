@@ -449,7 +449,7 @@ export function ContactsPage() {
                 <div className="p-4 rounded-xl bg-red-900/20 border border-red-500/30">
                   <h4 className="font-semibold text-red-300 mb-2">Warning</h4>
                   <p className="text-sm text-red-200">
-                    You are about to permanently delete <strong>{selectedContact?.name}</strong>. 
+                    You are about to permanently delete <strong>{selectedContact?.fullName}</strong>. 
                     This will also remove them from all assigned vaults.
                   </p>
                 </div>

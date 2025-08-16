@@ -13,13 +13,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Vault } from '@/types/vault';
-import { Contact } from '@/types/contact';
+
+// Interface for recipient contacts (subset of Contact)
+interface RecipientContact {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  relationship?: string;
+  isVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface VaultSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   vault: Vault;
-  recipients: Contact[];
+  recipients: RecipientContact[];
   onManageContacts: () => void;
   onDeleteVault: () => void;
 }

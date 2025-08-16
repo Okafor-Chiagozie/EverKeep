@@ -117,10 +117,10 @@ export function ContactDialog({
       if (isEditMode && contact) {
         // Update existing contact
         const updateData: UpdateContactRequest = {
-          name: formData.name.trim(),
+          fullName: formData.name.trim(),
           email: formData.email.trim(),
           phone: formData.phone.trim() || undefined,
-          role: formData.role
+          relationship: formData.role
         };
 
         const response = await contactService.updateContact(contact!.id, updateData);
@@ -138,10 +138,10 @@ export function ContactDialog({
       } else {
         // Create new contact
         const contactData: CreateContactRequest = {
-          name: formData.name.trim(),
+          fullName: formData.name.trim(),
           email: formData.email.trim(),
           phone: formData.phone.trim() || undefined,
-          role: formData.role
+          relationship: formData.role
         };
 
         const response = await contactService.createContact(user.id, contactData);

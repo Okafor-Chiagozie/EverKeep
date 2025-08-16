@@ -4,10 +4,6 @@ import {
   Phone,
   Shield,
   MoreVertical,
-  Heart,
-  Home,
-  Briefcase,
-  Users,
   Edit,
   Trash2,
   CheckCircle
@@ -42,26 +38,6 @@ export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: Co
     return colors[idx % colors.length];
   };
 
-  const getRelationshipIcon = (role?: string) => {
-    switch (role) {
-      case 'family': return Heart;
-      case 'friend': return Users;
-      case 'colleague': return Briefcase;
-      case 'home': return Home;
-      default: return Users;
-    }
-  };
-
-  const getRelationshipColor = (role?: string) => {
-    switch (role) {
-      case 'family': return 'bg-pink-500/20 text-pink-300 border-pink-500/30';
-      case 'friend': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
-      case 'colleague': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
-      case 'home': return 'bg-green-500/20 text-green-300 border-green-500/30';
-      default: return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
-    }
-  };
-
   const getRelationshipLabel = (role?: string) => {
     switch (role) {
       case 'family': return 'Family';
@@ -71,9 +47,6 @@ export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: Co
       default: return 'Other';
     }
   };
-
-
-  const RelationshipIcon = getRelationshipIcon(contact.relationship);
 
   return (
     <motion.div

@@ -85,13 +85,13 @@ export function VaultContactsDialog({
     .filter(vr => vr.contact) // Only include recipients with contact data
     .map(vr => ({
       id: vr.contact_id,
-      fullName: vr.contact.fullName,
-      email: vr.contact.email,
-      phone: vr.contact.phone,
-      relationship: vr.contact.relationship,
-      isVerified: vr.contact.isVerified,
-      createdAt: vr.contact.created_at,
-      updatedAt: vr.contact.updated_at,
+      fullName: vr.contact!.fullName,
+      email: vr.contact!.email,
+      phone: vr.contact!.phone,
+      relationship: vr.contact!.relationship,
+      isVerified: vr.contact!.isVerified,
+      createdAt: vr.contact!.created_at,
+      updatedAt: vr.contact!.updated_at,
     }));
   
   // Filter contacts based on search query

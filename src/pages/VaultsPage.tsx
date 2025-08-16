@@ -348,7 +348,7 @@ export function VaultsPage() {
                               {vault.recipients.slice(0, 3).map((contact, idx) => (
                                 <Avatar key={idx} className="w-8 h-8 border-2 border-slate-800 bg-gradient-to-r from-blue-500 to-purple-600">
                                   <AvatarFallback className="text-white font-semibold text-xs">
-                                    {contact?.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                                    {contact?.fullName?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U'}
                                   </AvatarFallback>
                                 </Avatar>
                               ))}
