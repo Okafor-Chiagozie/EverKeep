@@ -2,33 +2,33 @@ import { StandardApiResponse, PaginatedResponse, PaginationRequest, DatabaseRow 
 
 export interface Contact extends DatabaseRow {
   user_id: string;
-  name: string;
+  fullName: string;
   email: string;
   phone: string | null;
-  role: string;
-  verified: boolean;
+  relationship: string;
+  isVerified: boolean;
   timestamp: string;
 }
 
 export interface CreateContactRequest {
-  name: string;
+  fullName: string;
   email: string;
   phone?: string;
-  role: string;
+  relationship: string;
 }
 
 export interface UpdateContactRequest {
-  name?: string;
+  fullName?: string;
   email?: string;
   phone?: string;
-  role?: string;
-  verified?: boolean;
+  relationship?: string;
+  isVerified?: boolean;
 }
 
 export interface GetContactsRequest extends PaginationRequest {
   user_id?: string;
-  role?: string;
-  verified?: boolean;
+  relationship?: string;
+  isVerified?: boolean;
 }
 
 export interface GetContactsResponse extends PaginatedResponse<Contact> {}

@@ -94,6 +94,17 @@ export const authService = {
         responseCode: 'SUCCESS'
       };
     } catch (error: any) {
+      // Handle rate limiting specifically
+      if (error?.response?.status === 429) {
+        return {
+          data: null,
+          isSuccessful: false,
+          errors: [{ field: 'auth', description: 'Rate limit exceeded. Please try again in a moment.' }],
+          responseMessage: 'Rate limit exceeded',
+          responseCode: 'RATE_LIMIT_ERROR'
+        };
+      }
+      
       return {
         data: null,
         isSuccessful: false,

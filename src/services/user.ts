@@ -34,7 +34,6 @@ export const userService = {
       const payload: any = {};
       if (userData.full_name !== undefined) payload.full_name = userData.full_name;
       if (userData.phone !== undefined) payload.phone = userData.phone;
-      if (userData.inactivity_threshold_days !== undefined) payload.inactivity_threshold_days = userData.inactivity_threshold_days;
 
       const { data } = await api.patch(`/users/${userId}`, payload);
       return {

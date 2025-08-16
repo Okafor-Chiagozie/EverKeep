@@ -14,9 +14,9 @@ import {
 
 export const contactService = {
   async getContacts(payload: GetContactsRequest): Promise<GetContactsResponse> {
-    const { pageSize, pageNumber, user_id, role, verified, searchParams } = payload;
-    const params: any = { pageSize, pageNumber, user_id, role };
-    if (typeof verified === 'boolean') params.verified = String(verified);
+    const { pageSize, pageNumber, user_id, relationship, isVerified, searchParams } = payload;
+    const params: any = { pageSize, pageNumber, user_id, relationship };
+    if (typeof isVerified === 'boolean') params.isVerified = String(isVerified);
     if (searchParams) Object.assign(params, searchParams);
 
     try {

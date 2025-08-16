@@ -80,17 +80,33 @@ export function VaultContactsDialog({
   // Get assigned contact IDs from vault recipients
   const assignedContactIds = vaultRecipients.map(vr => vr.contact_id);
   
-  // Filter contacts based on search
+  // Get assigned contacts from vault recipients (with full contact data)
+  const assignedContacts = vaultRecipients
+    .filter(vr => vr.contact) // Only include recipients with contact data
+    .map(vr => ({
+      id: vr.contact_id,
+      fullName: vr.contact.fullName,
+      email: vr.contact.email,
+      phone: vr.contact.phone,
+      relationship: vr.contact.relationship,
+      isVerified: vr.contact.isVerified,
+      createdAt: vr.contact.created_at,
+      updatedAt: vr.contact.updated_at,
+    }));
+  
+  // Filter contacts based on search query
   const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Separate into assigned and available based on the filtered results
-  const assignedContacts = filteredContacts.filter(contact => 
-    assignedContactIds.includes(contact.id)
+  // Filter assigned contacts by search query
+  const filteredAssignedContacts = assignedContacts.filter(contact =>
+    contact.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
+  // Get available contacts (contacts that are not assigned to this vault)
   const availableContacts = filteredContacts.filter(contact => 
     !assignedContactIds.includes(contact.id)
   );
@@ -194,7 +210,7 @@ export function VaultContactsDialog({
   };
 
   // Get all assigned contacts (not filtered by search) for the summary
-  const allAssignedContacts = contacts.filter(contact => assignedContactIds.includes(contact.id));
+  const allAssignedContacts = assignedContacts; // Use the contacts from vault recipients
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -298,14 +314,14 @@ export function VaultContactsDialog({
                     <span>Currently Assigned</span>
                     {searchQuery && (
                       <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/30 text-xs">
-                        {assignedContacts.length} of {allAssignedContacts.length} shown
+                        {filteredAssignedContacts.length} of {allAssignedContacts.length} shown
                       </Badge>
                     )}
                   </h3>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-                  {assignedContacts.length === 0 ? (
+                  {filteredAssignedContacts.length === 0 ? (
                     <div className="text-center py-12">
                       {searchQuery ? (
                         <>
@@ -327,7 +343,7 @@ export function VaultContactsDialog({
                       )}
                     </div>
                   ) : (
-                    assignedContacts.map((contact, index) => (
+                    filteredAssignedContacts.map((contact, index) => (
                       <motion.div
                         key={contact.id}
                         initial={{ opacity: 0, x: -20 }}
@@ -339,19 +355,19 @@ export function VaultContactsDialog({
                             <div className="flex items-center space-x-3 flex-1 min-w-0">
                               <Avatar className={`w-10 h-10 bg-gradient-to-r ${getContactColor(index)}`}>
                                 <AvatarFallback className="text-white font-semibold">
-                                  {contact.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                  {contact.fullName?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center space-x-2">
-                                  <h4 className="font-medium text-white truncate">{contact.name}</h4>
-                                  {contact.verified && (
+                                  <h4 className="font-medium text-white truncate">{contact.fullName || 'Unknown Contact'}</h4>
+                                  {contact.isVerified && (
                                     <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
                                   )}
                                 </div>
                                 <p className="text-sm text-slate-400 truncate">{contact.email}</p>
                                 <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs mt-1">
-                                  {getRelationshipLabel(contact.role)}
+                                  {getRelationshipLabel(contact.relationship || 'other')}
                                 </Badge>
                               </div>
                             </div>
@@ -465,19 +481,19 @@ export function VaultContactsDialog({
                               />
                               <Avatar className={`w-10 h-10 bg-gradient-to-r ${getContactColor(index)}`}>
                                 <AvatarFallback className="text-white font-semibold">
-                                  {contact.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                  {contact.fullName?.split(' ').map(n => n[0]).join('').toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center space-x-2">
-                                  <h4 className="font-medium text-white truncate">{contact.name}</h4>
-                                  {contact.verified && (
+                                  <h4 className="font-medium text-white truncate">{contact.fullName || 'Unknown Contact'}</h4>
+                                  {contact.isVerified && (
                                     <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
                                   )}
                                 </div>
                                 <p className="text-sm text-slate-400 truncate">{contact.email}</p>
                                 <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs mt-1">
-                                  {getRelationshipLabel(contact.role)}
+                                  {getRelationshipLabel(contact.relationship || 'other')}
                                 </Badge>
                               </div>
                             </div>

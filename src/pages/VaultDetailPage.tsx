@@ -95,10 +95,10 @@ export function VaultDetailPage() {
     // Only resize if content exceeds base height
     if (ta.scrollHeight > baseHeight) {
       const max = lineHeight * 8 + paddingTop + paddingBottom; // 8 lines max
-      const next = Math.min(ta.scrollHeight, max);
-      ta.style.height = `${next}px`;
-      setTextareaHeight(next);
-      setTextareaAtMax(next >= max - 1);
+    const next = Math.min(ta.scrollHeight, max);
+    ta.style.height = `${next}px`;
+    setTextareaHeight(next);
+    setTextareaAtMax(next >= max - 1);
     } else {
       setTextareaHeight(baseHeight);
       setTextareaAtMax(false);
@@ -113,12 +113,29 @@ export function VaultDetailPage() {
       const recipientsResponse = await vaultService.getVaultRecipients(id);
       
       if (recipientsResponse.isSuccessful && recipientsResponse.data) {
-        // TODO: Fix this when API structure is clarified
-        // For now, set empty array since VaultRecipient doesn't have contacts property
+        // Extract contact data from recipients
+        const recipientContacts = recipientsResponse.data
+          .filter(recipient => recipient.contact) // Only include recipients with contact data
+          .map(recipient => ({
+            id: recipient.contact!.id,
+            fullName: recipient.contact!.fullName,
+            email: recipient.contact!.email,
+            phone: recipient.contact!.phone,
+            relationship: recipient.contact!.relationship,
+            isVerified: recipient.contact!.isVerified,
+            createdAt: recipient.contact!.created_at,
+            updatedAt: recipient.contact!.updated_at,
+          }));
+        
+        setRecipients(recipientContacts);
+        console.log('✅ Recipients updated:', recipientContacts.length, 'contacts');
+      } else {
         setRecipients([]);
+        console.log('❌ Failed to fetch recipients:', recipientsResponse.errors);
       }
     } catch (err) {
       console.error('Error fetching recipients:', err);
+      setRecipients([]);
     }
   };
 
@@ -153,8 +170,23 @@ export function VaultDetailPage() {
         }
 
         if (recipientsResponse.isSuccessful && recipientsResponse.data) {
-          // TODO: Fix this when API structure is clarified
-          // For now, set empty array since VaultRecipient doesn't have contacts property
+          // Extract contact data from recipients
+          const recipientContacts = recipientsResponse.data
+            .filter(recipient => recipient.contact) // Only include recipients with contact data
+            .map(recipient => ({
+              id: recipient.contact!.id,
+              fullName: recipient.contact!.fullName,
+              email: recipient.contact!.email,
+              phone: recipient.contact!.phone,
+              relationship: recipient.contact!.relationship,
+              isVerified: recipient.contact!.isVerified,
+              createdAt: recipient.contact!.created_at,
+              updatedAt: recipient.contact!.updated_at,
+            }));
+          
+          setRecipients(recipientContacts);
+          console.log('✅ Initial recipients loaded:', recipientContacts.length, 'contacts');
+        } else {
           setRecipients([]);
         }
 
@@ -459,25 +491,25 @@ export function VaultDetailPage() {
       for (const file of Array.from(files)) {
         toast.promise(
           (async () => {
-            const cloudinaryResponse = await cloudinaryService.uploadFile(file);
-            
-            const fileType = file.type.startsWith('image/') ? 'image' :
-                            file.type.startsWith('video/') ? 'video' :
-                            file.type.startsWith('audio/') ? 'audio' : 'document';
+        const cloudinaryResponse = await cloudinaryService.uploadFile(file);
+        
+        const fileType = file.type.startsWith('image/') ? 'image' :
+                        file.type.startsWith('video/') ? 'video' :
+                        file.type.startsWith('audio/') ? 'audio' : 'document';
 
-            const response = await vaultService.createVaultEntry({
-              vault_id: vault.id,
-              type: fileType,
-              content: JSON.stringify({
-                filename: file.name,
-                cloudinaryUrl: cloudinaryResponse.secure_url,
-                publicId: cloudinaryResponse.public_id,
-                size: cloudinaryResponse.bytes,
-                format: cloudinaryResponse.format
-              })
-            });
+        const response = await vaultService.createVaultEntry({
+          vault_id: vault.id,
+          type: fileType,
+          content: JSON.stringify({
+            filename: file.name,
+            cloudinaryUrl: cloudinaryResponse.secure_url,
+            publicId: cloudinaryResponse.public_id,
+            size: cloudinaryResponse.bytes,
+            format: cloudinaryResponse.format
+          })
+        });
 
-            if (response.isSuccessful && response.data) {
+        if (response.isSuccessful && response.data) {
               setVaultEntries(prev => [...prev, response.data!]);
               return `File "${file.name}" uploaded successfully`;
             } else {
@@ -521,27 +553,27 @@ export function VaultDetailPage() {
     
     toast.promise(
       (async () => {
-        const cloudinaryResponse = await cloudinaryService.uploadFile(file);
-        const fileType = file.type.startsWith('image/') ? 'image' :
-                         file.type.startsWith('video/') ? 'video' :
-                         file.type.startsWith('audio/') ? 'audio' : 'document';
+      const cloudinaryResponse = await cloudinaryService.uploadFile(file);
+      const fileType = file.type.startsWith('image/') ? 'image' :
+                       file.type.startsWith('video/') ? 'video' :
+                       file.type.startsWith('audio/') ? 'audio' : 'document';
 
-        const entryPayload = {
-          filename: file.name,
-          cloudinaryUrl: cloudinaryResponse.secure_url,
-          publicId: cloudinaryResponse.public_id,
-          size: cloudinaryResponse.bytes,
-          format: cloudinaryResponse.format,
-        };
+      const entryPayload = {
+        filename: file.name,
+        cloudinaryUrl: cloudinaryResponse.secure_url,
+        publicId: cloudinaryResponse.public_id,
+        size: cloudinaryResponse.bytes,
+        format: cloudinaryResponse.format,
+      };
 
-        const response = await vaultService.createVaultEntry({
-          vault_id: vault!.id,
-          type: fileType,
-          content: JSON.stringify(entryPayload),
-          parent_id: parentMessageId,
-        });
+      const response = await vaultService.createVaultEntry({
+        vault_id: vault!.id,
+        type: fileType,
+        content: JSON.stringify(entryPayload),
+        parent_id: parentMessageId,
+      });
 
-        if (response.isSuccessful && response.data) {
+      if (response.isSuccessful && response.data) {
           setVaultEntries(prev => [...prev, response.data!]);
           return `File "${file.name}" attached successfully`;
         } else {
@@ -555,7 +587,7 @@ export function VaultDetailPage() {
       }
     );
 
-    setPendingFiles(prev => prev.filter(f => f.name !== file.name));
+      setPendingFiles(prev => prev.filter(f => f.name !== file.name));
   };
 
   // Auto-scroll to bottom only after sending a new message
@@ -743,7 +775,7 @@ export function VaultDetailPage() {
                                   // call update endpoint
                                   try {
                                     await api.patch(`/vaults/entries/${message.id}`, { content });
-                                    setVaultEntries(prev => prev.map(e => e.id === message.id ? { ...e, content } : e));
+                                      setVaultEntries(prev => prev.map(e => e.id === message.id ? { ...e, content } : e));
                                   } catch (e) {
                                     setError('Failed to update message');
                                   }
@@ -829,7 +861,7 @@ export function VaultDetailPage() {
                     placeholder="Type a message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
+                onKeyDown={handleKeyDown}
                     rows={1}
                     style={{ height: textareaHeight, overflowY: textareaAtMax ? 'auto' : 'hidden' }}
                   />
@@ -847,21 +879,21 @@ export function VaultDetailPage() {
                   </Button>
                 </div>
 
-              </div>
+                      </div>
           </div>
         </div>
       </div>
 
       {/* Dialogs */}
       {vault && (
-        <VaultContactsDialog
-          open={showContactsDialog}
-          onOpenChange={setShowContactsDialog}
-          vaultId={vault.id}
-          vaultName={vault.name}
-          contacts={contacts}
-          onRecipientsChanged={handleRecipientsChanged}
-        />
+      <VaultContactsDialog
+        open={showContactsDialog}
+        onOpenChange={setShowContactsDialog}
+        vaultId={vault.id}
+        vaultName={vault.name}
+        contacts={contacts}
+        onRecipientsChanged={handleRecipientsChanged}
+      />
       )}
 
       <DeleteVaultDialog

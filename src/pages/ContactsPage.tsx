@@ -114,9 +114,9 @@ export function ContactsPage() {
   };
 
   const filteredContacts = contacts.filter(contact => {
-    const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = contact.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          contact.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || contact.role === categoryFilter;
+    const matchesCategory = categoryFilter === 'all' || contact.relationship === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
@@ -179,10 +179,10 @@ export function ContactsPage() {
 
   // Calculate stats
   const totalContacts = contacts.length;
-  const familyMembers = contacts.filter(c => c.role === 'family').length;
-  const friends = contacts.filter(c => c.role === 'friend').length;
-  const colleagues = contacts.filter(c => c.role === 'colleague').length;
-  const others = contacts.filter(c => !['family', 'friend', 'colleague'].includes(c.role)).length;
+  const familyMembers = contacts.filter(c => c.relationship === 'family').length;
+  const friends = contacts.filter(c => c.relationship === 'friend').length;
+  const colleagues = contacts.filter(c => c.relationship === 'colleague').length;
+  const others = contacts.filter(c => !['family', 'friend', 'colleague'].includes(c.relationship)).length;
 
   const categories = [
     { id: 'all', name: 'All Contacts', count: totalContacts },

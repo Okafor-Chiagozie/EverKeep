@@ -41,6 +41,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (response.isSuccessful && response.data) {
           setUser(response.data);
           localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.data));
+        } else if (response.responseCode === 'RATE_LIMIT_ERROR') {
+          // Handle rate limiting gracefully - keep local user data
+          console.warn('Rate limit exceeded when checking user session, using cached data');
+          // Don't clear user data on rate limit
         } else {
           // If server says no user, clear localStorage
           localStorage.removeItem(USER_STORAGE_KEY);

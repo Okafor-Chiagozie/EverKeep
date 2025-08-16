@@ -91,7 +91,7 @@ export function Dashboard() {
 
   // Calculate stats
   const totalVaults = vaults.length;
-  const unverifiedContacts = contacts.filter(contact => !contact.verified).length;
+  const unverifiedContacts = contacts.filter(contact => !contact.isVerified).length;
 
   const quickActions = [
     { 

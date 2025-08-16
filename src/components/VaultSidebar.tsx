@@ -128,14 +128,14 @@ export function VaultSidebar({
                   <div key={recipient.id} className="flex items-center space-x-3 p-3 rounded-lg bg-slate-800/30">
                     <Avatar className={`w-8 h-8 bg-gradient-to-r ${getContactColor(index)} flex-shrink-0`}>
                       <AvatarFallback className="text-white font-semibold text-xs">
-                        {recipient.name.charAt(0).toUpperCase()}
+                        {recipient.fullName?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{recipient.name}</p>
+                      <p className="text-sm font-medium text-white truncate">{recipient.fullName || 'Unknown Contact'}</p>
                       <p className="text-xs text-slate-400 truncate">{recipient.email}</p>
                     </div>
-                    {recipient.verified && (
+                    {recipient.isVerified && (
                       <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
                     )}
                   </div>

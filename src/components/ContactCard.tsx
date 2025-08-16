@@ -62,9 +62,18 @@ export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: Co
     }
   };
 
+  const getRelationshipLabel = (role?: string) => {
+    switch (role) {
+      case 'family': return 'Family';
+      case 'friend': return 'Friend';
+      case 'colleague': return 'Colleague';
+      case 'home': return 'Home';
+      default: return 'Other';
+    }
+  };
 
 
-  const RelationshipIcon = getRelationshipIcon(contact.role);
+  const RelationshipIcon = getRelationshipIcon(contact.relationship);
 
   return (
     <motion.div
@@ -80,15 +89,17 @@ export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: Co
           <div className="flex items-center space-x-3 flex-1 min-w-0">
             <Avatar className={`w-12 h-12 bg-gradient-to-r ${getAvatarColor(index)} flex-shrink-0`}>
               <AvatarFallback className="text-white font-semibold">
-                {contact.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                {contact.fullName?.split(' ').map(n => n[0]).join('').toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-white text-base truncate">{contact.name}</h3>
-              <Badge className={`${getRelationshipColor(contact.role)} border text-xs mt-1`}>
-                <RelationshipIcon className="w-3 h-3 mr-1" />
-                {contact.role ?? 'Other'}
-              </Badge>
+              <h3 className="font-semibold text-white text-base truncate">{contact.fullName || 'Unknown Contact'}</h3>
+              <p className="text-slate-400 text-sm truncate">{contact.email}</p>
+              <div className="flex items-center space-x-2 mt-1">
+                <Badge variant="secondary" className="text-xs">
+                  {getRelationshipLabel(contact.relationship || 'other')}
+                </Badge>
+              </div>
             </div>
           </div>
           <DropdownMenu>
@@ -133,7 +144,7 @@ export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: Co
             <span className="text-slate-400">Assigned to:</span>
             <span className="font-medium text-white">{vaultCount} vault{vaultCount !== 1 ? 's' : ''}</span>
           </div>
-          {contact.verified && (
+          {contact.isVerified && (
             <CheckCircle className="w-4 h-4 text-green-400" />
           )}
         </div>

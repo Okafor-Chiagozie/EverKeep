@@ -89,10 +89,10 @@ export function ContactDialog({
       if (contact) {
         // Edit mode - populate with existing data
         setFormData({
-          name: contact.name,
+          name: contact.fullName,
           email: contact.email,
           phone: contact.phone || '',
-          role: contact.role
+          role: contact.relationship
         });
       } else {
         // Add mode - reset to defaults

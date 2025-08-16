@@ -61,7 +61,7 @@ export const CreateVaultDialog = ({ open, onOpenChange, onVaultCreated, contacts
 
   // Filter contacts based on search
   const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -396,13 +396,13 @@ export const CreateVaultDialog = ({ open, onOpenChange, onVaultCreated, contacts
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2">
-                                  <h4 className="font-medium text-white">{contact.name}</h4>
-                                  {contact.verified && (
+                                  <h4 className="font-medium text-white">{contact.fullName || 'Unknown Contact'}</h4>
+                                  {contact.isVerified && (
                                     <CheckCircle className="w-4 h-4 text-green-400" />
                                   )}
                                 </div>
                                 <p className="text-sm text-slate-400">{contact.email}</p>
-                                <p className="text-xs text-slate-500 capitalize">{contact.role}</p>
+                                <p className="text-xs text-slate-500 capitalize">{contact.relationship || 'Other'}</p>
                               </div>
                             </div>
                           </Card>

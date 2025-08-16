@@ -26,6 +26,17 @@ export interface VaultRecipient extends DatabaseRow {
   vault_id: string;
   contact_id: string;
   timestamp: string;
+  contact?: {
+    id: string;
+    user_id: string;
+    fullName: string;
+    email: string;
+    phone?: string;
+    relationship?: string;
+    isVerified: boolean;
+    created_at: string;
+    updated_at: string;
+  };
 }
 
 export interface CreateVaultRequest {
