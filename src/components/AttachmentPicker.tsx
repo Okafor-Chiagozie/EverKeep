@@ -25,9 +25,9 @@ export function AttachmentPicker({ onFilesSelected, accept = 'image/*,video/*,au
 
   return (
     <>
-      <label htmlFor={id} className="cursor-pointer flex items-center text-slate-300 hover:text-white text-sm px-2 py-1 rounded hover:bg-slate-700/40">
-        <Paperclip className="w-4 h-4 mr-1" />
-        <span>Attach</span>
+      <label htmlFor={id} className="cursor-pointer flex items-center text-slate-300 hover:text-white text-xs sm:text-sm px-1.5 sm:px-2 py-1 rounded hover:bg-slate-700/40 h-8 w-8 sm:h-auto sm:w-auto justify-center sm:justify-start">
+        <Paperclip className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+        <span className="hidden sm:inline">Attach</span>
       </label>
       <input
         id={id}

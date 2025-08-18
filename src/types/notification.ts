@@ -4,13 +4,14 @@ export interface Notification extends DatabaseRow {
   user_id: string;
   title: string;
   content: string;
-  timestamp: string;
+  timestamp: string; // This field is now properly populated from backend createdAt
 }
 
 export interface CreateNotificationRequest {
   user_id: string;
   title: string;
   content: string;
+  timestamp?: string; // Optional for creation
 }
 
 export interface GetNotificationsRequest extends PaginationRequest {

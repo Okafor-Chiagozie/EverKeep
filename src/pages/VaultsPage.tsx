@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { CreateVaultDialog } from '@/components/CreateVaultDialog';
 import { 
   Shield, 
   Plus, 
@@ -11,12 +16,6 @@ import {
   Loader2,
   FileX
 } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { CreateVaultDialog } from '@/components/CreateVaultDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { vaultService } from '@/services/vault';
 import { contactService } from '@/services/contact';
@@ -63,9 +62,26 @@ export function VaultsPage() {
         ]);
 
         if (vaultsResponse.isSuccessful && vaultsResponse.data) {
+          // If no vaults, set empty array and skip metadata fetching
+          if (vaultsResponse.data.length === 0) {
+            setVaults([]);
+            return;
+          }
+          
           // Fetch additional metadata for each vault
           const vaultsWithMetadata = await Promise.all(
             vaultsResponse.data.map(async (vault) => {
+              // Validate vault ID before making API calls
+              if (!vault.id || vault.id === 'undefined') {
+                console.error('Invalid vault ID:', vault.id);
+                return {
+                  ...vault,
+                  recipientCount: 0,
+                  entryCount: 0,
+                  recipients: []
+                } as VaultWithMetadata;
+              }
+              
               try {
                 const [recipientsResponse, entriesResponse] = await Promise.all([
                   vaultService.getVaultRecipients(vault.id),
@@ -77,9 +93,17 @@ export function VaultsPage() {
                 
                 if (recipientsResponse.isSuccessful && recipientsResponse.data) {
                   recipientCount = recipientsResponse.data.length;
-                  // TODO: Fix this when API structure is clarified
-                  // For now, set empty array since VaultRecipient doesn't have contacts property
-                  recipients.push(...[]);
+                  // Extract contact data from VaultRecipient objects and map to Contact interface
+                  const validContacts = recipientsResponse.data
+                    .map(recipient => recipient.contact)
+                    .filter((contact): contact is NonNullable<typeof contact> => contact !== undefined)
+                    .map(contact => ({
+                      ...contact,
+                      timestamp: contact.created_at, // Map created_at to timestamp for Contact interface
+                      phone: contact.phone || null, // Ensure phone is string | null, not undefined
+                      relationship: contact.relationship || 'other' // Ensure relationship is string, not undefined
+                    }));
+                  recipients.push(...validContacts);
                 }
 
                 const entryCount = entriesResponse.isSuccessful && entriesResponse.data ? entriesResponse.data.length : 0;
@@ -295,19 +319,18 @@ export function VaultsPage() {
             {filteredVaults.map((vault, index) => {
               return (
                 <motion.div
-                  key={vault.id}
+                  key={vault.id || `vault-${index}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + index * 0.1 }}
                   whileHover={{ y: -4 }}
                   className="group"
                 >
-                  <Card className="p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 h-full">
+                  <Card className="p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 h-full group">
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3 flex-1 min-w-0">
                         <motion.div
-                          whileHover={{ rotate: 180 }}
                           transition={{ duration: 0.3 }}
                           className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-500/30 flex-shrink-0"
                         >
@@ -339,35 +362,48 @@ export function VaultsPage() {
                     </div>
 
                     {/* Assigned Contacts */}
-                    <div className="mb-6">
-                      <h4 className="text-sm font-medium text-slate-300 mb-2">Assigned Contacts</h4>
-                      <div className="flex items-center space-x-2">
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-slate-300 mb-3">Assigned Contacts</h4>
+                      <div className="flex items-center space-x-3">
                         {vault.recipientCount > 0 ? (
                           <>
-                            <div className="flex -space-x-2">
-                              {vault.recipients.slice(0, 3).map((contact, idx) => (
-                                <Avatar key={idx} className="w-8 h-8 border-2 border-slate-800 bg-gradient-to-r from-blue-500 to-purple-600">
-                                  <AvatarFallback className="text-white font-semibold text-xs">
-                                    {contact?.fullName?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
+                            <div className="flex -space-x-1">
+                              {vault.recipients.slice(0, 4).map((contact, idx) => (
+                                <motion.div
+                                  key={idx}
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ delay: 0.1 + idx * 0.1 }}
+                                  className="relative group"
+                                >
+                                  <div className="w-6 h-6 bg-slate-800 rounded-full flex items-center justify-center border border-white shadow-sm hover:scale-110 transition-transform duration-200">
+                                    <span className="text-[10px] text-white font-medium">
+                                      {contact?.fullName?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U'}
+                                    </span>
+                                  </div>
+                                </motion.div>
                               ))}
-                              {vault.recipientCount > 3 && (
-                                <div className="w-8 h-8 border-2 border-slate-800 bg-slate-700 rounded-full flex items-center justify-center">
-                                  <span className="text-xs text-white font-semibold">
-                                    +{vault.recipientCount - 3}
+                              {vault.recipientCount > 4 && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ delay: 0.5 }}
+                                  className="w-6 h-6 bg-slate-700 rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform duration-200"
+                                >
+                                  <span className="text-[10px] text-white font-medium">
+                                    +{vault.recipientCount - 4}
                                   </span>
-                                </div>
+                                </motion.div>
                               )}
                             </div>
-                            <div className="flex items-center space-x-1 text-sm text-slate-400">
-                              <Users className="w-3 h-3" />
-                              <span>{vault.recipientCount} assigned</span>
+                            <div className="flex items-center space-x-2 text-sm text-slate-400">
+                              <Users className="w-4 h-4 text-blue-400" />
+                              <span className="font-medium">{vault.recipientCount} contact{vault.recipientCount !== 1 ? 's' : ''} assigned</span>
                             </div>
                           </>
                         ) : (
                           <div className="text-sm text-slate-400 flex items-center space-x-2">
-                            <Users className="w-4 h-4" />
+                            <Users className="w-4 h-4 text-slate-500" />
                             <span>No contacts assigned yet</span>
                           </div>
                         )}

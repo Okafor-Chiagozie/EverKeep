@@ -399,6 +399,29 @@ export function SettingsPage() {
                 </Badge>
               </div>
 
+              <Separator className="bg-slate-700/50" />
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                <div>
+                  <h4 className="font-medium text-white">Last Login</h4>
+                  <p className="text-sm text-slate-400">
+                    {userProfile?.last_login 
+                      ? `Last accessed on ${new Date(userProfile.last_login).toLocaleDateString()} at ${new Date(userProfile.last_login).toLocaleTimeString()}`
+                      : 'No login history available'
+                    }
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm text-slate-400">
+                    {userProfile?.last_login 
+                      ? new Date(userProfile.last_login).toLocaleDateString()
+                      : 'Never'
+                    }
+                  </span>
+                </div>
+              </div>
+
               {userProfile && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                   <div>

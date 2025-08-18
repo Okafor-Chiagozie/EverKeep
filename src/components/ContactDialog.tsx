@@ -30,7 +30,6 @@ interface ContactDialogProps {
   onOpenChange: (open: boolean) => void;
   contact?: Contact | null; // If provided, it's edit mode
   onContactSaved: (contact: Contact) => void;
-  onError: (error: string) => void;
 }
 
 const contactRoles = [
@@ -68,8 +67,7 @@ export function ContactDialog({
   open, 
   onOpenChange, 
   contact, 
-  onContactSaved, 
-  onError 
+  onContactSaved
 }: ContactDialogProps) {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
@@ -80,6 +78,7 @@ export function ContactDialog({
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const isEditMode = !!contact;
 
@@ -104,6 +103,7 @@ export function ContactDialog({
         });
       }
       setIsSuccess(false);
+      setLocalError(null); // Clear any previous errors
     }
   }, [open, contact]);
 
@@ -133,7 +133,7 @@ export function ContactDialog({
             onOpenChange(false);
           }, 1500);
         } else {
-          onError(response.errors[0]?.description || 'Failed to update contact');
+          setLocalError(response.errors[0]?.description || 'Failed to update contact');
         }
       } else {
         // Create new contact
@@ -154,12 +154,12 @@ export function ContactDialog({
             onOpenChange(false);
           }, 1500);
         } else {
-          onError(response.errors[0]?.description || 'Failed to add contact');
+          setLocalError(response.errors[0]?.description || 'Failed to add contact');
         }
       }
     } catch (err) {
       console.error('Error saving contact:', err);
-      onError(`Failed to ${isEditMode ? 'update' : 'add'} contact`);
+      setLocalError(`Failed to ${isEditMode ? 'update' : 'add'} contact`);
     } finally {
       setIsSaving(false);
     }
@@ -171,8 +171,16 @@ export function ContactDialog({
     }
   };
 
+  const clearLocalError = () => {
+    setLocalError(null);
+  };
+
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (localError) {
+      setLocalError(null);
+    }
   };
 
   // Handle role selection - this ensures the selection always works
@@ -368,6 +376,30 @@ export function ContactDialog({
                     They will only be contacted when your vault is ready for delivery.
                   </p>
                 </div>
+              )}
+
+              {/* Error Notification Banner */}
+              {localError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 rounded-xl bg-red-900/20 border border-red-500/30"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-red-300 mb-2">Error</h4>
+                      <p className="text-sm text-slate-300">
+                        {localError}
+                      </p>
+                    </div>
+                    <button
+                      onClick={clearLocalError}
+                      className="ml-4 w-6 h-6 rounded-full bg-red-800/50 hover:bg-red-700/50 border border-red-600/50 hover:border-red-500/50 flex items-center justify-center text-red-400 hover:text-red-300 transition-all duration-200 flex-shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
               )}
 
               {/* Actions */}

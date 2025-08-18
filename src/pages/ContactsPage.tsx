@@ -22,6 +22,8 @@ import { vaultService } from '@/services/vault';
 import { Contact } from '@/types/contact';
 import { ContactCard } from '@/components/ContactCard';
 import { ContactDialog } from '@/components/ContactDialog';
+import { getRelationshipCardColor } from '@/utils/relationshipColors';
+import { Label } from '@/components/ui/label';
 
 export function ContactsPage() {
   const { user } = useAuth();
@@ -32,6 +34,7 @@ export function ContactsPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [vaultCounts, setVaultCounts] = useState<Record<string, number>>({});
@@ -132,6 +135,7 @@ export function ContactsPage() {
 
   const handleDeleteContact = (contact: Contact) => {
     setSelectedContact(contact);
+    setDeleteConfirmation('');
     setShowDeleteDialog(true);
   };
 
@@ -166,6 +170,7 @@ export function ContactsPage() {
         });
         setShowDeleteDialog(false);
         setSelectedContact(null);
+        setDeleteConfirmation('');
       } else {
         setError(response.errors[0]?.description || 'Failed to delete contact');
       }
@@ -257,25 +262,37 @@ export function ContactsPage() {
               title: 'Total Contacts', 
               value: totalContacts, 
               icon: Users, 
-              color: 'blue' 
+              color: 'blue',
+              iconBg: 'bg-gradient-to-br from-blue-400/30 to-blue-500/30',
+              iconColor: 'text-blue-200',
+              description: 'Your trusted network'
             },
             { 
               title: 'Family', 
               value: familyMembers, 
               icon: Home, 
-              color: 'blue' 
+              color: getRelationshipCardColor('family'),
+              iconBg: 'bg-gradient-to-br from-pink-400/30 to-pink-500/30',
+              iconColor: 'text-pink-200',
+              description: 'Loved ones & relatives'
             },
             { 
               title: 'Friends', 
               value: friends, 
               icon: Heart, 
-              color: 'pink' 
+              color: getRelationshipCardColor('friend'),
+              iconBg: 'bg-gradient-to-br from-emerald-400/30 to-emerald-500/30',
+              iconColor: 'text-emerald-200',
+              description: 'Close personal friends'
             },
             { 
               title: 'Colleagues', 
               value: colleagues, 
               icon: Briefcase, 
-              color: 'purple' 
+              color: getRelationshipCardColor('colleague'),
+              iconBg: 'bg-gradient-to-br from-violet-400/30 to-violet-500/30',
+              iconColor: 'text-violet-200',
+              description: 'Work & professional'
             },
           ].map((stat, index) => (
             <motion.div
@@ -284,15 +301,39 @@ export function ContactsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + index * 0.1 }}
             >
-              <Card className="p-3 sm:p-4 lg:p-6 bg-slate-900/50 backdrop-blur-sm border-slate-700/50 hover:border-slate-600/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stat.value}</p>
-                    <p className="text-xs sm:text-sm text-slate-400">{stat.title}</p>
+              <Card className="p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm border-slate-700/50 hover:border-slate-600/50 hover:scale-102 transition-all duration-300 group relative overflow-hidden">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-5">
+                  <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-white/20 transform translate-x-6 -translate-y-6"></div>
+                  <div className="absolute bottom-0 left-0 w-12 h-12 rounded-full bg-white/20 transform -translate-x-4 translate-y-4"></div>
+                </div>
+                
+                {/* Sparkle Effect */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <div className="absolute top-3 right-3 w-1.5 h-1.5 bg-white/70 rounded-full animate-pulse"></div>
+                  <div className="absolute bottom-4 left-4 w-1 h-1 bg-white/50 rounded-full animate-pulse delay-300"></div>
+                </div>
+                
+                {/* Content */}
+                <div className="relative z-10">
+                  {/* Header with Icon */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${stat.iconBg} flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300 ring-1 ring-white/20 group-hover:ring-white/30`}>
+                      <stat.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.iconColor} group-hover:rotate-6 transition-transform duration-300 drop-shadow-sm`} />
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-300 uppercase tracking-wider font-medium opacity-80 group-hover:opacity-100 transition-opacity duration-300">{stat.description}</p>
+                    </div>
                   </div>
-                  <div className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl bg-${stat.color}-500/20 flex items-center justify-center`}>
-                    <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-${stat.color}-400`} />
+                  
+                  {/* Main Stats */}
+                  <div className="flex items-center space-x-3">
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white group-hover:text-white/90 transition-colors duration-300 drop-shadow-sm">{stat.value}</p>
+                    <p className="text-sm text-slate-200 font-medium group-hover:text-white transition-colors duration-300">{stat.title}</p>
                   </div>
+                  
+                  {/* Hover Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
                 </div>
               </Card>
             </motion.div>
@@ -412,18 +453,26 @@ export function ContactsPage() {
           onOpenChange={setShowContactDialog}
           contact={selectedContact}
           onContactSaved={handleContactSaved}
-          onError={setError}
         />
 
         {/* Delete Contact Dialog */}
-        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <Dialog 
+          open={showDeleteDialog} 
+          onOpenChange={(open) => {
+            setShowDeleteDialog(open);
+            if (!open) setDeleteConfirmation('');
+          }}
+        >
           <DialogContent className="max-w-md bg-slate-900/95 border-slate-700 mx-4 sm:mx-0">
             <DialogTitle className="sr-only">Delete Contact Confirmation</DialogTitle>
             
             <div className="p-6 sm:p-8 relative">
               {/* Close Button */}
               <button
-                onClick={() => setShowDeleteDialog(false)}
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setDeleteConfirmation('');
+                }}
                 disabled={isDeleting}
                 className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200 disabled:opacity-50"
               >
@@ -454,12 +503,30 @@ export function ContactsPage() {
                   </p>
                 </div>
 
+                {/* Name Confirmation */}
+                <div className="space-y-3">
+                  <Label htmlFor="delete-confirmation" className="text-slate-300">
+                    To confirm deletion, type the contact's name: <strong>{selectedContact?.fullName}</strong>
+                  </Label>
+                  <Input
+                    id="delete-confirmation"
+                    value={deleteConfirmation}
+                    onChange={(e) => setDeleteConfirmation(e.target.value)}
+                    placeholder="Type the contact's name to confirm"
+                    className="bg-slate-800/50 border-slate-600 text-white"
+                    disabled={isDeleting}
+                  />
+                </div>
+
                 {/* Actions */}
                 <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-700/50">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setShowDeleteDialog(false)}
+                    onClick={() => {
+                      setShowDeleteDialog(false);
+                      setDeleteConfirmation('');
+                    }}
                     disabled={isDeleting}
                     className="border-slate-600 text-slate-300 hover:bg-slate-800"
                   >
@@ -467,8 +534,8 @@ export function ContactsPage() {
                   </Button>
                   <Button
                     onClick={handleConfirmDelete}
-                    disabled={isDeleting}
-                    className="bg-red-600 hover:bg-red-700 text-white"
+                    disabled={isDeleting || deleteConfirmation !== selectedContact?.fullName}
+                    className="bg-red-600 hover:bg-red-700 text-white disabled:bg-slate-600 disabled:cursor-not-allowed"
                   >
                     {isDeleting ? (
                       <div className="flex items-center space-x-2">

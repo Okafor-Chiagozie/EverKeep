@@ -14,7 +14,10 @@ import {
   Send,
   Trash2,
   Download,
-  ChevronDown
+  ChevronDown,
+  MoreVertical,
+  Paperclip,
+  Edit
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,6 +37,7 @@ import { AttachmentPicker } from '@/components/AttachmentPicker';
 import { motion } from 'framer-motion';
 import { api } from '@/lib/api';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
 // TypeScript interfaces for local entries
@@ -59,6 +63,21 @@ interface RecipientContact {
   createdAt: string;
   updatedAt: string;
 }
+
+// helper to open native picker for mobile attach from menu
+const openFilePickerForMessage = (onFiles: (files: File[]) => Promise<void> | void) => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  input.accept = 'image/*,video/*,audio/*,application/pdf';
+  input.onchange = async (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      await onFiles(Array.from(target.files));
+    }
+  };
+  input.click();
+};
 
 export function VaultDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -781,34 +800,106 @@ export function VaultDetailPage() {
                           {/* Message header with edit */}
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
-                              <EditableMessage
-                                entry={message as any}
-                                onSave={async (content: string) => {
-                                  // call update endpoint
-                                  try {
-                                    await api.patch(`/vaults/entries/${message.id}`, { content });
-                                      setVaultEntries(prev => prev.map(e => e.id === message.id ? { ...e, content } : e));
-                                  } catch (e) {
-                                    setError('Failed to update message');
-                                  }
-                                }}
-                              />
+                              {/* Desktop: Editable message */}
+                              <div className="hidden sm:block">
+                                <EditableMessage
+                                  entry={message as any}
+                                  onSave={async (content: string) => {
+                                    // call update endpoint
+                                    try {
+                                      await api.patch(`/vaults/entries/${message.id}`, { content });
+                                        setVaultEntries(prev => prev.map(e => e.id === message.id ? { ...e, content } : e));
+                                    } catch (e) {
+                                      setError('Failed to update message');
+                                    }
+                                  }}
+                                />
+                              </div>
+                              {/* Mobile: Read-only message */}
+                              <div className="sm:hidden">
+                                <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
+                                  {message.content}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-2">
+                                  {new Date(message.timestamp).toLocaleString()}
+                                </p>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 ml-2">
-                              <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white" onClick={() => handleDeleteMessage(message.id)}>
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                              {/* Add attachment to this message */}
-                              <AttachmentPicker
-                                onFilesSelected={async (files: File[]) => {
-                                  for (const file of files) {
-                                    await attachFileToMessage(file, message.id);
-                                  }
-                                }}
-                                onError={(msg) => setError(msg)}
-                              />
-            </div>
-          </div>
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              {/* Desktop actions */}
+                              <div className="hidden sm:flex items-center gap-2 ml-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="px-3 text-slate-400 hover:text-white" 
+                                  onClick={() => handleDeleteMessage(message.id)}
+                                  title="Delete message"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                                <AttachmentPicker
+                                  onFilesSelected={async (files: File[]) => {
+                                    for (const file of files) {
+                                      await attachFileToMessage(file, message.id);
+                                    }
+                                  }}
+                                  onError={(msg) => setError(msg)}
+                                />
+                              </div>
+
+                              {/* Mobile kebab menu */}
+                              <div className="sm:hidden ml-2">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300">
+                                      <MoreVertical className="w-4 h-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="min-w-[10rem] bg-slate-900 border-slate-700">
+                                    <DropdownMenuItem
+                                      className="text-slate-200 focus:bg-slate-800"
+                                      onClick={() => {
+                                        // For mobile edit, we'll need to implement a different approach
+                                        // For now, show a simple prompt or implement inline editing
+                                        const newContent = prompt('Edit message:', message.content ?? '');
+                                        if (!newContent) return;
+                                        if (newContent !== message.content && newContent.trim() !== '') {
+                                          const trimmedContent = newContent.trim();
+                                          // Update the message
+                                          api.patch(`/vaults/entries/${message.id}`, { content: trimmedContent })
+                                            .then(() => {
+                                              setVaultEntries(prev => prev.map(e => e.id === message.id ? { ...e, content: trimmedContent } : e));
+                                            })
+                                            .catch(() => setError('Failed to update message'));
+                                        }
+                                      }}
+                                    >
+                                      <Edit className="w-4 h-4 mr-2" />
+                                      Edit message
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-slate-200 focus:bg-slate-800"
+                                      onClick={() => openFilePickerForMessage(async (files) => {
+                                        for (const file of files) {
+                                          await attachFileToMessage(file, message.id);
+                                        }
+                                      })}
+                                    >
+                                      <Paperclip className="w-4 h-4 mr-2" />
+                                      Attach files
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-red-300 focus:bg-red-900/40"
+                                      onClick={() => handleDeleteMessage(message.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Delete message
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                          </div>
 
                           {/* Attachments dropdown (only when present) */}
                           {attachments.length > 0 && (
@@ -830,22 +921,66 @@ export function VaultDetailPage() {
                                           </p>
                                           <p className="text-xs text-slate-400">{new Date(att.timestamp).toLocaleString()}</p>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white"
-                                            onClick={() => handleDownloadMedia({
-                                              id: att.id,
-                                              title: (() => { try { const d = JSON.parse(att.content || '{}'); return d.filename || 'download'; } catch { return 'download'; } })(),
-                                              cloudinaryUrl: (() => { try { const d = JSON.parse(att.content || '{}'); return d.cloudinaryUrl; } catch { return undefined; } })(),
-                                              type: att.type as any,
-                                              publicId: (() => { try { const d = JSON.parse(att.content || '{}'); return d.publicId; } catch { return undefined; } })(),
-                                            } as any)}
-                                            title="Download"
-                                          >
-                                            <Download className="w-4 h-4" />
-                                          </Button>
-                                          <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300" onClick={() => handleDeleteMedia(att.id)}>
-                                            <Trash2 className="w-4 h-4" />
-                                          </Button>
+                                        <div className="flex items-center gap-1 sm:gap-2">
+                                          {/* Desktop attachment actions */}
+                                          <div className="hidden sm:flex items-center gap-2">
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm" 
+                                              className="px-2 text-slate-300 hover:text-white"
+                                              onClick={() => handleDownloadMedia({
+                                                id: att.id,
+                                                title: (() => { try { const d = JSON.parse(att.content || '{}'); return d.filename || 'download'; } catch { return 'download'; } })(),
+                                                cloudinaryUrl: (() => { try { const d = JSON.parse(att.content || '{}'); return d.cloudinaryUrl; } catch { return undefined; } })(),
+                                                type: att.type as any,
+                                                publicId: (() => { try { const d = JSON.parse(att.content || '{}'); return d.publicId; } catch { return undefined; } })(),
+                                              } as any)}
+                                              title="Download"
+                                            >
+                                              <Download className="w-4 h-4" />
+                                            </Button>
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm" 
+                                              className="px-2 text-red-400 hover:text-red-300" 
+                                              onClick={() => handleDeleteMedia(att.id)}
+                                              title="Delete attachment"
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                          </div>
+                                          {/* Mobile attachment kebab */}
+                                          <div className="sm:hidden">
+                                            <DropdownMenu>
+                                              <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300">
+                                                  <MoreVertical className="w-4 h-4" />
+                                                </Button>
+                                              </DropdownMenuTrigger>
+                                              <DropdownMenuContent align="end" className="min-w-[10rem] bg-slate-900 border-slate-700">
+                                                <DropdownMenuItem
+                                                  className="text-slate-200 focus:bg-slate-800"
+                                                  onClick={() => handleDownloadMedia({
+                                                    id: att.id,
+                                                    title: (() => { try { const d = JSON.parse(att.content || '{}'); return d.filename || 'download'; } catch { return 'download'; } })(),
+                                                    cloudinaryUrl: (() => { try { const d = JSON.parse(att.content || '{}'); return d.cloudinaryUrl; } catch { return undefined; } })(),
+                                                    type: att.type as any,
+                                                    publicId: (() => { try { const d = JSON.parse(att.content || '{}'); return d.publicId; } catch { return undefined; } })(),
+                                                  } as any)}
+                                                >
+                                                  <Download className="w-4 h-4 mr-2" />
+                                                  Download
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                  className="text-red-300 focus:bg-red-900/40"
+                                                  onClick={() => handleDeleteMedia(att.id)}
+                                                >
+                                                  <Trash2 className="w-4 h-4 mr-2" />
+                                                  Delete
+                                                </DropdownMenuItem>
+                                              </DropdownMenuContent>
+                                            </DropdownMenu>
+                                          </div>
                                         </div>
                                       </div>
                                     </Card>

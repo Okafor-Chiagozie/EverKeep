@@ -41,49 +41,43 @@ export function AboutPage() {
 
   const team = [
     {
-      name: 'Sarah Chen',
+      name: 'Chiagozie Okafor',
       role: 'Founder & CEO',
       bio: 'Former security engineer at Apple with 15 years in encryption technology.',
-      avatar: 'SC'
+      avatar: 'CO'
     },
     {
-      name: 'Michael Rodriguez',
-      role: 'CTO',
+      name: 'Martins Onyia',
+      role: 'Co Founder',
       bio: 'Ex-Google engineer specializing in distributed systems and data security.',
-      avatar: 'MR'
+      avatar: 'MO'
     },
     {
-      name: 'Emily Johnson',
-      role: 'Head of Design',
+      name: 'Chimdike Anagbo',
+      role: 'Co Founder',
       bio: 'Award-winning UX designer focused on creating meaningful digital experiences.',
-      avatar: 'EJ'
-    },
-    {
-      name: 'David Kim',
-      role: 'Security Lead',
-      bio: 'Cybersecurity expert with expertise in zero-knowledge encryption systems.',
-      avatar: 'DK'
+      avatar: 'CA'
     }
   ];
 
   const milestones = [
     {
-      year: '2022',
+      year: '2025',
       title: 'Company Founded',
       description: 'EverKeep was born from a personal need to preserve family memories securely.'
     },
     {
-      year: '2023',
+      year: '2025',
       title: 'Beta Launch',
       description: 'Launched private beta with 1,000 families testing our platform.'
     },
     {
-      year: '2024',
+      year: '2026',
       title: 'Public Release',
       description: 'Officially launched to the public with enterprise-grade security.'
     },
     {
-      year: '2024',
+      year: '2027',
       title: '50K+ Families',
       description: 'Reached milestone of protecting memories for over 50,000 families worldwide.'
     }
@@ -192,10 +186,10 @@ export function AboutPage() {
                 </blockquote>
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                    SC
+                    CO
                   </div>
                   <div>
-                    <div className="font-semibold text-white">Sarah Chen</div>
+                    <div className="font-semibold text-white">Chiagozie okafor</div>
                     <div className="text-sm text-slate-400">Founder & CEO</div>
                   </div>
                 </div>
@@ -303,7 +297,7 @@ export function AboutPage() {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {team.map((member, index) => (
               <motion.div
                 key={member.name}

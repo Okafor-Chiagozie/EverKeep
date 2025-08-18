@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Contact } from '@/types/contact';
+import { getRelationshipColor } from '@/utils/relationshipColors';
 
 interface ContactCardProps {
   contact: Contact;
@@ -69,7 +70,10 @@ export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: Co
               <h3 className="font-semibold text-white text-base truncate">{contact.fullName || 'Unknown Contact'}</h3>
               <p className="text-slate-400 text-sm truncate">{contact.email}</p>
               <div className="flex items-center space-x-2 mt-1">
-                <Badge variant="secondary" className="text-xs">
+                <Badge 
+                  variant="secondary" 
+                  className={`text-xs ${getRelationshipColor(contact.relationship || 'other').bg} ${getRelationshipColor(contact.relationship || 'other').text} border-0`}
+                >
                   {getRelationshipLabel(contact.relationship || 'other')}
                 </Badge>
               </div>
@@ -134,7 +138,37 @@ export function ContactCard({ contact, index, vaultCount, onEdit, onDelete }: Co
 
         {/* Added Date */}
         <div className="text-xs text-slate-500 mt-3 text-center">
-          Added {new Date(contact.timestamp).toLocaleDateString()}
+          {(() => {
+            try {
+              // Try to parse the timestamp
+              const date = new Date(contact.timestamp || contact.created_at || contact.updated_at);
+              
+              // Check if the date is valid
+              if (isNaN(date.getTime())) {
+                return 'Date not available';
+              }
+              
+              // Format the date nicely
+              const now = new Date();
+              const diffInMs = now.getTime() - date.getTime();
+              const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+              
+              if (diffInDays === 0) {
+                return 'Added today';
+              } else if (diffInDays === 1) {
+                return 'Added yesterday';
+              } else if (diffInDays < 7) {
+                return `Added ${diffInDays} days ago`;
+              } else if (diffInDays < 30) {
+                const weeks = Math.floor(diffInDays / 7);
+                return `Added ${weeks} week${weeks !== 1 ? 's' : ''} ago`;
+              } else {
+                return `Added ${date.toLocaleDateString()}`;
+              }
+            } catch (error) {
+              return 'Date not available';
+            }
+          })()}
         </div>
       </Card>
     </motion.div>

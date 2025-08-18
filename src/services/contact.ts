@@ -11,6 +11,7 @@ import {
   VerifyContactRequest,
   VerifyContactResponse
 } from '@/types/contact';
+import { NotificationHelper } from '@/utils/notificationHelper';
 
 export const contactService = {
   async getContacts(payload: GetContactsRequest): Promise<GetContactsResponse> {
@@ -66,7 +67,25 @@ export const contactService = {
 
   async createContact(userId: string, contactData: CreateContactRequest): Promise<CreateContactResponse> {
     try {
+      // Capture the actual contact creation initiation time BEFORE making the API call
+      const contactCreationInitiatedAt = new Date().toISOString();
+      console.log('🔍 Contact creation initiated at:', contactCreationInitiatedAt);
+      
       const { data } = await api.post('/contacts', { user_id: userId, ...contactData });
+      
+      // Log contact creation activity with the captured timestamp
+      try {
+        await NotificationHelper.logContactAdded(
+          userId,
+          data.data.id || data.data._id,
+          contactData.fullName || contactData.email,
+          contactData.relationship || 'contact',
+          contactCreationInitiatedAt // Use the captured timestamp, not current time
+        );
+      } catch (logError) {
+        console.warn('Failed to log contact creation activity:', logError);
+      }
+      
       return {
         data: data.data as Contact,
         isSuccessful: true,
@@ -87,7 +106,27 @@ export const contactService = {
 
   async updateContact(contactId: string, contactData: UpdateContactRequest): Promise<UpdateContactResponse> {
     try {
+      // Capture the actual contact update initiation time BEFORE making the API call
+      const contactUpdateInitiatedAt = new Date().toISOString();
+      console.log('🔍 Contact update initiated at:', contactUpdateInitiatedAt);
+      
       const { data } = await api.patch(`/contacts/${contactId}`, contactData);
+      
+      // Log contact update activity with the captured timestamp
+      try {
+        await NotificationHelper.logActivity(
+          data.data.user_id || 'unknown',
+          'contact_updated',
+          {
+            contactId: contactId,
+            contactName: contactData.fullName || data.data.fullName || 'Unknown Contact',
+            timestamp: contactUpdateInitiatedAt // Use the captured timestamp, not current time
+          }
+        );
+      } catch (logError) {
+        console.warn('Failed to log contact update activity:', logError);
+      }
+      
       return {
         data: data.data as Contact,
         isSuccessful: true,
@@ -108,7 +147,37 @@ export const contactService = {
 
   async deleteContact(contactId: string) {
       try {
+      // Capture the actual contact deletion initiation time BEFORE making the API call
+      const contactDeletionInitiatedAt = new Date().toISOString();
+      console.log('🔍 Contact deletion initiated at:', contactDeletionInitiatedAt);
+      
+      // Fetch contact details before deletion for logging
+      let contactName = 'Unknown Contact';
+      let userId = 'unknown';
+      try {
+        const { data: contactData } = await api.get(`/contacts/${contactId}`);
+        contactName = contactData?.data?.fullName || contactData?.data?.email || 'Unknown Contact';
+        userId = contactData?.data?.user_id || 'unknown';
+      } catch (fetchError) {
+        console.warn('Failed to fetch contact details for logging:', fetchError);
+      }
+      
       await api.delete(`/contacts/${contactId}`);
+      
+      // Log contact deletion activity with the captured timestamp
+      try {
+        await NotificationHelper.logActivity(
+          userId,
+          'contact_deleted',
+          { 
+            contactName,
+            timestamp: contactDeletionInitiatedAt // Use the captured timestamp, not current time
+          }
+        );
+      } catch (logError) {
+        console.warn('Failed to log contact deletion activity:', logError);
+      }
+      
     return {
         data: null,
       isSuccessful: true,

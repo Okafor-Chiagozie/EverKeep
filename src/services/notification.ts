@@ -15,9 +15,18 @@ export const notificationService = {
     if (payload.searchParams) Object.assign(params, payload.searchParams);
 
     try {
+      console.log('🔍 Notification service: Fetching notifications with params:', params);
       const { data } = await api.get('/notifications', { params });
-      return {
-        data: data.data as Notification[],
+      console.log('🔍 Notification service: Raw API response:', data);
+      
+      const response = {
+        data: data.data.map((notification: any) => ({
+          id: notification.id,
+          user_id: notification.user_id,
+          title: notification.title,
+          content: notification.message, // Map message to content
+          timestamp: notification.timestamp, // Backend now sends this correctly
+        })) as Notification[],
         totalCount: data.totalCount || 0,
         totalPages: data.totalPages || 0,
         isSuccessful: true,
@@ -25,7 +34,11 @@ export const notificationService = {
         responseMessage: 'Notifications retrieved successfully',
         responseCode: 'SUCCESS'
       };
+      
+      console.log('🔍 Notification service: Processed response:', response);
+      return response;
     } catch (error: any) {
+      console.error('❌ Notification service: Error fetching notifications:', error);
       return {
         data: [],
         totalCount: 0,

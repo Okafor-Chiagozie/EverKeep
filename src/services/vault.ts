@@ -16,6 +16,7 @@ import {
 } from '@/types/vault';
 import { StandardApiResponse } from '@/types/common';
 import EncryptionUtils from '@/utils/encryptionUtils';
+import { NotificationHelper } from '@/utils/notificationHelper';
 
 interface VaultDeletionStats {
   entriesDeleted: number;
@@ -126,10 +127,29 @@ export const vaultService = {
 
   async createVault(vaultData: CreateVaultRequest): Promise<CreateVaultResponse> {
     try {
+      // Capture the actual vault creation initiation time BEFORE making the API call
+      const vaultCreationInitiatedAt = new Date().toISOString();
+      console.log('🔍 Vault creation initiated at:', vaultCreationInitiatedAt);
+      
       // Encrypt vault name/description on client before sending (optional; server will also encrypt)
       const payload: any = { ...vaultData };
 
       const { data } = await api.post('/vaults', payload);
+      
+      // Log vault creation activity with the captured timestamp
+      if (data?.data?.user_id) {
+        try {
+          await NotificationHelper.logVaultCreated(
+            data.data.user_id,
+            data.data.id || data.data._id,
+            vaultData.name,
+            vaultCreationInitiatedAt // Use the captured timestamp, not current time
+          );
+        } catch (logError) {
+          console.warn('Failed to log vault creation activity:', logError);
+        }
+      }
+      
       return {
         data: data.data as Vault,
         isSuccessful: true,
@@ -150,11 +170,32 @@ export const vaultService = {
 
   async createVaultEntry(entryData: CreateVaultEntryRequest): Promise<StandardApiResponse<VaultEntry>> {
     try {
+      // Capture the actual entry creation initiation time BEFORE making the API call
+      const entryCreationInitiatedAt = new Date().toISOString();
+      console.log('🔍 Entry creation initiated at:', entryCreationInitiatedAt);
+      
       const { data } = await api.post(`/vaults/${entryData.vault_id}/entries`, {
         type: entryData.type,
         content: entryData.content,
         parent_id: (entryData as any).parent_id,
       });
+      
+      // Log entry creation activity with the captured timestamp
+      if (data?.data?.user_id) {
+        try {
+          await NotificationHelper.logEntryAdded(
+            data.data.user_id,
+            entryData.vault_id,
+            'Unknown Vault', // We'd need to fetch vault name for better logging
+            entryData.type,
+            data.data.id || data.data._id,
+            entryCreationInitiatedAt // Use the captured timestamp, not current time
+          );
+        } catch (logError) {
+          console.warn('Failed to log entry creation activity:', logError);
+        }
+      }
+      
       return {
         data: data.data as VaultEntry,
         isSuccessful: true,
@@ -176,6 +217,10 @@ export const vaultService = {
   async deleteVaultEntry(entryId: string): Promise<StandardApiResponse<null>> {
     try {
       await api.delete(`/vaults/entries/${entryId}`);
+      
+      // Note: We'd need to fetch entry details before deletion to log activity properly
+      // For now, we'll skip logging deletion as we don't have the entry data
+      
       return {
         data: null,
         isSuccessful: true,
@@ -217,9 +262,33 @@ export const vaultService = {
 
   async addVaultRecipient(recipientData: AddVaultRecipientRequest): Promise<StandardApiResponse<VaultRecipient>> {
     try {
+      // Capture the actual recipient addition initiation time BEFORE making the API call
+      const recipientAdditionInitiatedAt = new Date().toISOString();
+      console.log('🔍 Recipient addition initiated at:', recipientAdditionInitiatedAt);
+      
       const { data } = await api.post(`/vaults/${recipientData.vault_id}/recipients`, {
         contact_id: recipientData.contact_id,
       });
+      
+      // Log recipient addition activity with the captured timestamp
+      if (data?.data?.user_id) {
+        try {
+          await NotificationHelper.logActivity(
+            data.data.user_id,
+            'recipient_added',
+            {
+              vaultId: recipientData.vault_id,
+              vaultName: 'Unknown Vault', // We'd need to fetch vault name
+              contactId: recipientData.contact_id,
+              contactName: 'Unknown Contact', // We'd need to fetch contact name
+              timestamp: recipientAdditionInitiatedAt // Use the captured timestamp, not current time
+            }
+          );
+        } catch (logError) {
+          console.warn('Failed to log recipient addition activity:', logError);
+        }
+      }
+      
       return {
         data: data.data as VaultRecipient,
         isSuccessful: true,
@@ -241,6 +310,10 @@ export const vaultService = {
   async removeVaultRecipient(recipientId: string): Promise<StandardApiResponse<null>> {
     try {
       await api.delete(`/vaults/recipients/${recipientId}`);
+      
+      // Note: We'd need to fetch recipient details before deletion to log activity properly
+      // For now, we'll skip logging removal as we don't have the recipient data
+      
       return {
         data: null,
         isSuccessful: true,
@@ -261,6 +334,9 @@ export const vaultService = {
 
   async deleteVault(vaultId: string): Promise<StandardApiResponse<VaultDeletionStats>> {
    try {
+      // Note: We could fetch vault details here for better logging if needed
+      // For now, we'll skip this to avoid unnecessary API calls
+      
       // Fetch entries to gather Cloudinary publicIds and counts
       const { data: entries } = await api.get(`/vaults/${vaultId}/entries`);
       const cloudinaryFiles: string[] = [];
@@ -304,6 +380,15 @@ export const vaultService = {
 
       console.log('✅ Vault deletion completed successfully');
 
+      // Log vault deletion activity
+      try {
+        // We need the user ID from somewhere - this is a limitation of the current API structure
+        // For now, we'll skip logging as we don't have the user ID
+        console.log('Note: Vault deletion activity not logged due to missing user ID');
+      } catch (logError) {
+        console.warn('Failed to log vault deletion activity:', logError);
+      }
+
       // Return deletion statistics
       return {
          data: {
@@ -333,6 +418,10 @@ export const vaultService = {
    // Also add the missing updateVault method if it doesn't exist
    async updateVault(vaultId: string, vaultData: UpdateVaultRequest): Promise<StandardApiResponse<Vault>> {
    try {
+      // Capture the actual vault update initiation time BEFORE making the API call
+      const vaultUpdateInitiatedAt = new Date().toISOString();
+      console.log('🔍 Vault update initiated at:', vaultUpdateInitiatedAt);
+      
       // Get current vault data for encryption
        const { data: currentVault } = await api.get(`/vaults/${vaultId}`);
        if (!currentVault) {
@@ -358,6 +447,23 @@ export const vaultService = {
 
       // Update the vault
        const { data } = await api.patch(`/vaults/${vaultId}`, encryptedData);
+
+      // Log vault update activity with the captured timestamp
+      if (currentVault.data.user_id) {
+        try {
+          await NotificationHelper.logActivity(
+            currentVault.data.user_id,
+            'vault_updated',
+            {
+              vaultId: vaultId,
+              vaultName: vaultData.name || currentVault.data.name,
+              timestamp: vaultUpdateInitiatedAt // Use the captured timestamp, not current time
+            }
+          );
+        } catch (logError) {
+          console.warn('Failed to log vault update activity:', logError);
+        }
+      }
 
       // Return decrypted data to client
       const decryptedVault = {
